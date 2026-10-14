@@ -7,7 +7,7 @@
 
 ## 2. Resolved build inputs
 
-- [ ] 2.1 Implement upstream discovery and a versioned input-manifest schema. Fixture tests cover unchanged/changed inputs, missing releases, prereleases, full source identity, API failure/rate limits and incompatible dependency sets.
+- [x] 2.1 Implement upstream discovery and a versioned input-manifest schema. Fixture tests cover unchanged/changed inputs, missing releases, prereleases, full source identity, API failure/rate limits and incompatible dependency sets.
 - [ ] 2.2 Implement verified acquisition and license/provenance recording. Tests reject checksum mismatch, missing assets and unrecorded moving refs.
 - [ ] 2.3 Establish supported-base and Intel-stack compatibility with an exact-source build. Record resolved versions and build results, not guessed package compatibility.
 
