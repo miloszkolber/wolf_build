@@ -1,0 +1,5 @@
+.build/
+compose/.env
+compose/gate.env
+compose/state/
+__pycache__/

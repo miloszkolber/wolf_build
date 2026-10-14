@@ -1,0 +1,22 @@
+schema: spec-driven
+
+context: |
+  wolf_build is currently planning-only. The initial change proposes an Intel-only
+  linux/amd64 Wolf runtime image maintained from upstream, with a shared gate image
+  owned and published by llama_build. No implementation contracts exist yet.
+  Preserve compositor, embedded audio, input and application-container integration.
+  Container publication is separate from deployment and Intel GPU acceptance.
+
+rules:
+  proposal:
+    - Distinguish planning authorization, implementation and live deployment.
+    - Name the shared gate dependency and its implementation owner.
+  specs:
+    - Put proposed requirements in change deltas until delivered and verified.
+    - Use SHALL or MUST with observable WHEN and THEN scenarios.
+  design:
+    - Record dependency compatibility, image boundaries, promotion and rollback.
+    - Keep deployment identities and hardware measurements outside the repository.
+  tasks:
+    - Use numbered checkboxes with a verifiable completion condition.
+    - Do not mark builds or GPU acceptance complete from documentation validation.

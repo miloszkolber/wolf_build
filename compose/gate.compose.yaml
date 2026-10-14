@@ -1,0 +1,18 @@
+# Gate-only integration example. Create the managed runtime separately.
+services:
+  wolf:
+    image: ${GATE_IMAGE:?Select a shared gate version or digest with environment-only handoff}
+    container_name: ${GATE_CONTAINER_NAME:-wolf}
+    restart: always
+    network_mode: host
+    user: "1000:1000"
+    env_file: gate.env
+    group_add: ["${DOCKER_GID:?Set the Docker socket owning group}"]
+    read_only: true
+    volumes: ["${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:rw"]
+    healthcheck:
+      test: ["CMD", "/app/gate", "--health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
