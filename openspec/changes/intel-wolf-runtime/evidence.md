@@ -22,6 +22,8 @@ The first supported-base builds established the need for explicit XCB developmen
 
 Ubuntu's minimal base does not initially provide a usable default TLS trust path for snapshot bootstrapping. The build copies the CA bundle from the pinned Rust image and passes its path explicitly to APT, retaining certificate and repository-signature verification. A fresh snapshot-index diagnostic succeeded. APT index failures are fatal instead of appearing later as missing packages.
 
+Wolf's `moonlight-server` target requires ICU (`find_package(ICU 61.0 COMPONENTS uc)` via the Boost locale path), but the build image carried only the `libicu78` runtime library. Both the local and CI builds failed deterministically at Wolf configure with `Failed to find all ICU components (missing: ICU_INCLUDE_DIR ICU_LIBRARY uc)`. Commit `8132fb1` adds `libicu-dev` plus `libzstd-dev`/`zlib1g-dev` for the external dwarf/zstd metadata path, without disabling input support. CI rerun and a local rebuild are in progress; neither has produced a verified image yet.
+
 These findings explain the implementation choices. The ongoing final-image build, plugin checks, Intel encode probes and startup/shutdown tests must still pass before the runtime tasks are checked.
 
 ## Unfinished acceptance
