@@ -26,7 +26,8 @@ COPY --from=rust /usr/local/rustup /usr/local/rustup
 ENV PATH=/usr/local/cargo/bin:/opt/wolf-runtime/bin:$PATH \
     RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo \
     PKG_CONFIG_PATH=/opt/wolf-runtime/lib/pkgconfig \
-    LD_LIBRARY_PATH=/opt/wolf-runtime/lib
+    LD_LIBRARY_PATH=/opt/wolf-runtime/lib \
+    C_INCLUDE_PATH=/opt/wolf-runtime/include CPLUS_INCLUDE_PATH=/opt/wolf-runtime/include
 COPY .build/context/sources/ /sources/
 COPY scripts/compile-runtime.sh /compile-runtime.sh
 ARG BUILD_JOBS=2
