@@ -1,0 +1,86 @@
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import unittest
+import tempfile
+from unittest.mock import patch
+from urllib.error import HTTPError
+
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
+import resolve
+spec=importlib.util.spec_from_file_location("acquisition",Path(__file__).resolve().parents[1]/"scripts/build-inputs.py")
+acquisition=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(acquisition)
+
+
+class LockedInputsTests(unittest.TestCase):
+    def test_acquisition_rejects_git_object_mismatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target=Path(temp);(target/".git").mkdir()
+            with patch.object(acquisition,"git",side_effect=["","b"*40,"","","b"*40]):
+                with self.assertRaisesRegex(ValueError,"identity mismatch"):
+                    acquisition.acquire({"url":"https://github.com/a/b.git","sha":"a"*40},target)
+
+    def test_acquisition_rejects_unrecorded_cache_edits(self):
+        with tempfile.TemporaryDirectory() as temp:
+            target=Path(temp);(target/".git").mkdir()
+            with patch.object(acquisition,"git",return_value=" M source.cpp"):
+                with self.assertRaisesRegex(ValueError,"unrecorded modifications"):
+                    acquisition.acquire({"url":"https://github.com/a/b.git","sha":"a"*40},target)
+
+    def test_selected_revision_can_advance_pinned_submodule(self):
+        state={"updated":False,"head":"b"*40}
+        def git(*args,**kwargs):
+            if args[0]=="status":
+                return "" if "--ignore-submodules=all" in args or state["updated"] else " M child"
+            if args[0]=="rev-parse": return state["head"]
+            if args[0]=="checkout": state["head"]="a"*40
+            if args[:2]==("submodule","update"): state["updated"]=True
+            if args[:2]==("submodule","status"): return "a"*40+" child"
+            return ""
+        with tempfile.TemporaryDirectory() as temp:
+            target=Path(temp);(target/".git").mkdir()
+            with patch.object(acquisition,"git",side_effect=git):
+                result=acquisition.acquire({"url":"https://github.com/a/b.git","sha":"a"*40},target)
+        self.assertEqual(result,"a"*40+" child")
+
+    def test_rate_limit_failure_never_falls_back(self):
+        with patch.object(resolve,"urlopen",side_effect=HTTPError("url",429,"limited",{},None)) as request,patch.object(resolve.time,"sleep"):
+            with self.assertRaises(HTTPError): resolve.github_api("repos/a/b/releases/latest")
+            self.assertEqual(request.call_count,3)
+
+    def test_reject_unsafe_or_unlocked_sources(self):
+        for source in ({"url":"file:///private/key","sha":"a"*40},{"url":"https://github.com/a/b.git","sha":"HEAD"},{"url":"https://attacker.invalid/a/b","sha":"a"*40}):
+            with self.assertRaises(ValueError): acquisition.validate_source(source)
+        acquisition.validate_source({"url":"https://github.com/a/b.git","sha":"a"*40})
+
+    def test_release_channels_reject_prereleases(self):
+        for key in range(3):
+            releases=[{"tag_name":"intel-media-26.3.5"},{"tag_name":"intel-onevpl-26.3.5"},{"tag_name":"v2.17.0"}]
+            releases[key]["prerelease"]=True
+            with patch.object(resolve,"github_api",side_effect=releases):
+                with self.assertRaises(ValueError): resolve.discover_intel()
+
+    def test_lock_expands_declared_compatibility_and_unpinned_cmake(self):
+        inputs={"wolf":{"sha":"a"*40},"gstreamer":{"version":"1.26.7"},"interpipe":{"sha":"b"*40},"intel":{"media_driver":"intel-media-26.3.5","vpl_gpu_rt":"intel-onevpl-26.3.5","libvpl":"v2.17.0"}}
+        def api(path):
+            if "releases/tags" in path: return {"body":"intel-gmmlib-22.10.2 intel/libva/releases/tag/2.24.1 intel/libvpl/releases/tag/v2.17.0"}
+            return {"tree":[{"path":"CMakeLists.txt"}]}
+        def raw(repo,sha,path):
+            return {"docker/wolf.Dockerfile":"ARG RUST_VERSION=1.96.0\ngit checkout 016b4fc\ncargo install cargo-c@0.10.23", "docker/gstreamer.Dockerfile":"ARG GSTREAMER_VERSION=1.26.7", "CMakeLists.txt":"FetchContent_Declare(mdns_cpp GIT_REPOSITORY https://github.com/games-on-whales/mdns_cpp.git)"}[path]
+        with patch.object(resolve,"source_commit",return_value="c"*40),patch.object(resolve,"github_api",side_effect=api),patch.object(resolve,"raw",side_effect=raw),patch.object(resolve,"hub_digest",return_value="sha256:"+"d"*64):
+            manifest=resolve.lock_sources({"inputs":inputs})
+        self.assertEqual(manifest["version"],2)
+        self.assertEqual(inputs["cmake_sources"]["MDNS_CPP"],"wolf-mdns_cpp")
+        self.assertEqual(inputs["sources"]["wolf-mdns_cpp"]["sha"],"c"*40)
+        self.assertEqual(inputs["sources"]["gmmlib"]["ref"],"intel-gmmlib-22.10.2")
+        self.assertIn("digest",inputs["toolchain"])
+
+    def test_base_must_resolve_for_target_architecture(self):
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self,*args): pass
+            def read(self): return json.dumps({"images":[{"architecture":"arm64","os":"linux","digest":"sha256:"+"a"*64}]}).encode()
+        with patch.object(resolve,"urlopen",return_value=Response()):
+            with self.assertRaises(ValueError): resolve.discover_base_digest()

@@ -8,6 +8,7 @@ import subprocess
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -30,13 +31,13 @@ def is_full_sha(value):
     return bool(re.fullmatch(r"[0-9a-f]{40}", value or ""))
 
 
-def check_gstreamer(version):
+def check_gstreamer(version, accepted_series=GSTREAMER_SERIES):
     match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", version or "")
     if not match:
         raise ValueError("gstreamer version must look like 1.26.7, not a branch")
     series = match.group(1) + "." + match.group(2)
-    if series != GSTREAMER_SERIES:
-        raise ValueError("gstreamer series " + series + " is outside the accepted " + GSTREAMER_SERIES + " series")
+    if series != accepted_series:
+        raise ValueError("gstreamer series " + series + " is outside the accepted " + accepted_series + " series")
     return version
 
 
@@ -81,8 +82,8 @@ def fingerprint(inputs):
     return hashlib.sha256(canonical.encode()).hexdigest()[:12]
 
 
-def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, media_tag, vpl_tag, libvpl_tag, base_digest, gate_tag="", gate_digest=""):
-    check_gstreamer(gstreamer_version)
+def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, media_tag, vpl_tag, libvpl_tag, base_digest, gate_tag="", gate_digest="", gstreamer_series=GSTREAMER_SERIES):
+    check_gstreamer(gstreamer_version,gstreamer_series)
     wolf_sha = select_wolf("", wolf_sha)
     compositor_sha = select_named_sha("compositor", "", compositor_sha)
     interpipe_sha = select_named_sha("interpipe", "", interpipe_sha)
@@ -95,7 +96,7 @@ def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, m
         raise ValueError("gate needs both a tag and a full digest, or neither while publication is pending")
     inputs = {
         "wolf": {"repo": WOLF_REPO, "ref": WOLF_REF, "sha": wolf_sha},
-        "gstreamer": {"version": gstreamer_version, "series": GSTREAMER_SERIES},
+        "gstreamer": {"version": gstreamer_version, "series": gstreamer_series},
         "compositor": {"repo": COMPOSITOR_REPO, "sha": compositor_sha},
         "interpipe": {"repo": INTERPIPE_REPO, "sha": interpipe_sha},
         "intel": {"media_driver": media_tag, "vpl_gpu_rt": vpl_tag, "libvpl": libvpl_tag, "core_version": core},
@@ -154,7 +155,7 @@ def discover_compositor_pin():
     return sha
 
 
-def discover_gstreamer(version):
+def discover_gstreamer(version, accepted_series=GSTREAMER_SERIES):
     req = Request(
         "https://gitlab.freedesktop.org/api/v4/projects/gstreamer%2Fgstreamer/repository/tags/" + version,
         headers={"User-Agent": "wolf_build"},
@@ -170,21 +171,34 @@ def discover_gstreamer(version):
             time.sleep(2 ** attempt)
     if tag.get("name") != version:
         raise ValueError("gstreamer version not found: " + version)
-    return check_gstreamer(version)
+    return check_gstreamer(version,accepted_series)
+
+
+def discover_gstreamer_patch(series=GSTREAMER_SERIES):
+    request=Request("https://gitlab.freedesktop.org/api/v4/projects/gstreamer%2Fgstreamer/repository/tags?search=%5E"+series+".&per_page=100",headers={"User-Agent":"wolf_build"})
+    with urlopen(request,timeout=30) as response:
+        tags=json.load(response)
+    eligible=[entry["name"] for entry in tags if re.fullmatch(re.escape(series)+r"\.\d+",entry.get("name",""))]
+    if not eligible: raise ValueError("no stable patch release in compatible GStreamer series")
+    return max(eligible,key=lambda tag:tuple(map(int,tag.split("."))))
 
 
 def discover_intel():
     media = github_api("repos/" + INTEL_MEDIA_REPO + "/releases/latest")
     vpl = github_api("repos/" + INTEL_VPL_REPO + "/releases/latest")
     libvpl = github_api("repos/" + INTEL_LIBVPL_REPO + "/releases/latest")
-    if media.get("draft") or media.get("prerelease") or vpl.get("draft") or vpl.get("prerelease"):
+    if any(item.get("draft") or item.get("prerelease") for item in (media, vpl, libvpl)):
         raise ValueError("intel media stack latest must be a stable release")
     core = intel_core_version(media.get("tag_name", ""), vpl.get("tag_name", ""))
     return {"media": media["tag_name"], "vpl": vpl["tag_name"], "libvpl": libvpl["tag_name"], "core": core}
 
 
 def discover_base_digest():
-    req = Request("https://hub.docker.com/v2/repositories/library/ubuntu/tags/26.04", headers={"User-Agent": "wolf_build"})
+    return hub_digest("ubuntu", "26.04")
+
+
+def hub_digest(image, tag):
+    req = Request(f"https://hub.docker.com/v2/repositories/library/{image}/tags/{tag}", headers={"User-Agent": "wolf_build"})
     for attempt in range(3):
         try:
             with urlopen(req, timeout=30) as response:
@@ -199,7 +213,7 @@ def discover_base_digest():
             digest = image.get("digest", "")
             if re.fullmatch(r"sha256:[0-9a-f]{64}", digest or ""):
                 return digest
-    raise ValueError("ubuntu:26.04 has no amd64 linux digest")
+    raise ValueError(f"{image}:{tag} has no amd64 linux digest")
 
 
 def emit(values):
@@ -214,7 +228,7 @@ def emit(values):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--wolf-sha", default="")
-    parser.add_argument("--gstreamer-version", default=GSTREAMER_DEFAULT)
+    parser.add_argument("--gstreamer-version", default="")
     parser.add_argument("--compositor-sha", default="")
     parser.add_argument("--interpipe-sha", default="")
     parser.add_argument("--media-driver-tag", default="")
@@ -224,10 +238,24 @@ def main():
     parser.add_argument("--gate-tag", default="")
     parser.add_argument("--gate-digest", default="")
     parser.add_argument("--output", default=".build/manifest.json")
+    parser.add_argument("--lock", action="store_true", help="Resolve all build sources, base and toolchain into a buildable lock")
     args = parser.parse_args()
     wolf_sha = args.wolf_sha or discover_wolf_stable()
-    gstreamer_version = discover_gstreamer(args.gstreamer_version)
-    compositor_sha = args.compositor_sha or discover_compositor_pin()
+    series=GSTREAMER_SERIES
+    if args.lock:
+        declared=re.search(r"ARG GSTREAMER_VERSION=([\d.]+)",raw(WOLF_REPO,wolf_sha,"docker/gstreamer.Dockerfile"))
+        if not declared: raise ValueError("Wolf does not declare its GStreamer version")
+        series=declared.group(1).rsplit(".",1)[0]
+    gstreamer_version = discover_gstreamer(args.gstreamer_version or discover_gstreamer_patch(series),series)
+    if args.compositor_sha:
+        compositor_sha = args.compositor_sha
+    elif args.lock:
+        declaration=raw(WOLF_REPO,wolf_sha,"docker/wolf.Dockerfile")
+        pin=re.search(r"git checkout ([a-f0-9]{7,40})",declaration)
+        if not pin: raise ValueError("Wolf does not declare a compatible compositor pin")
+        compositor_sha=source_commit("https://github.com/"+COMPOSITOR_REPO+".git",pin.group(1))
+    else:
+        compositor_sha = discover_compositor_pin()
     interpipe_sha = args.interpipe_sha or discover_component_master(INTERPIPE_REPO)
     if args.media_driver_tag or args.vpl_tag or args.libvpl_tag:
         if not (args.media_driver_tag and args.vpl_tag and args.libvpl_tag):
@@ -236,11 +264,114 @@ def main():
     else:
         intel = discover_intel()
     base_digest = args.base_digest or discover_base_digest()
-    manifest = build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, intel["media"], intel["vpl"], intel["libvpl"], base_digest, args.gate_tag, args.gate_digest)
+    manifest = build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, intel["media"], intel["vpl"], intel["libvpl"], base_digest, args.gate_tag, args.gate_digest,gstreamer_series=series)
+    if args.lock:
+        manifest = lock_sources(manifest, compositor_override=args.compositor_sha)
     path = Path(args.output)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(manifest, indent=2) + "\n")
     emit({"tag": manifest["candidate_tag"], "sha": wolf_sha, "input_hash": manifest["input_hash"], "manifest": str(path)})
+
+
+def source_commit(url, ref):
+    if is_full_sha(ref):
+        return ref
+    match = re.fullmatch(r"https://github.com/([\w.-]+/[\w.-]+?)(?:\.git)?", url)
+    if match:
+        sha = github_api("repos/" + match[1] + "/commits/" + quote(ref, safe=""))["sha"]
+    elif url == "https://gitlab.com/ReenigneArcher/Simple-Web-Server.git":
+        request = Request("https://gitlab.com/api/v4/projects/ReenigneArcher%2FSimple-Web-Server/repository/commits/" + quote(ref, safe=""), headers={"User-Agent":"wolf_build"})
+        with urlopen(request, timeout=30) as response:
+            sha = json.load(response)["id"]
+    else:
+        raise ValueError("unrecognized source URL: " + url)
+    if not is_full_sha(sha):
+        raise ValueError("source ref did not resolve to full commit: " + url)
+    return sha
+
+
+def raw(repo, sha, path):
+    with urlopen(Request(f"https://raw.githubusercontent.com/{repo}/{sha}/{path}", headers={"User-Agent":"wolf_build"}), timeout=30) as response:
+        return response.read().decode()
+
+
+def lock_sources(manifest, compositor_override=""):
+    """Expand release names into exact sources and Wolf's declared CMake inputs."""
+    inputs = manifest["inputs"]
+    sources = {}
+    def add(name, url, ref):
+        entry = {"url":url, "ref":ref, "sha":source_commit(url, ref)}
+        if name in sources and sources[name] != entry:
+            raise ValueError("conflicting source declarations for " + name)
+        sources[name] = entry
+    wolf_sha = inputs["wolf"]["sha"]
+    add("wolf", "https://github.com/games-on-whales/wolf.git", wolf_sha)
+    dockerfile = raw(WOLF_REPO, wolf_sha, "docker/wolf.Dockerfile")
+    gstfile = raw(WOLF_REPO, wolf_sha, "docker/gstreamer.Dockerfile")
+    gst = re.search(r"ARG GSTREAMER_VERSION=([\d.]+)", gstfile)
+    pin = re.search(r"git checkout ([a-f0-9]{7,40})", dockerfile)
+    rust = re.search(r"ARG RUST_VERSION=([\d.]+)", dockerfile)
+    if not all((gst, pin, rust)):
+        raise ValueError("Wolf build metadata changed; review compatibility before building")
+    if inputs["gstreamer"]["version"].rsplit(".",1)[0] != gst.group(1).rsplit(".",1)[0]:
+        raise ValueError("GStreamer series differs from Wolf's declaration")
+    add("gstreamer", "https://github.com/GStreamer/gstreamer.git", inputs["gstreamer"]["version"])
+    add("compositor", "https://github.com/"+COMPOSITOR_REPO+".git", compositor_override or pin.group(1))
+    inputs["compositor"] = {"repo":COMPOSITOR_REPO, "sha":sources["compositor"]["sha"]}
+    add("interpipe", "https://github.com/"+INTERPIPE_REPO+".git", inputs["interpipe"]["sha"])
+    release = github_api("repos/"+INTEL_VPL_REPO+"/releases/tags/"+inputs["intel"]["vpl_gpu_rt"])
+    body = release.get("body", "")
+    dependencies = {
+        "gmmlib": ("intel/gmmlib", r"intel-gmmlib-\d+\.\d+\.\d+"),
+        "libva": ("intel/libva", r"intel/libva/releases/tag/([\d.]+)"),
+        "libvpl": ("intel/libvpl", r"intel/libvpl/releases/tag/(v[\d.]+)"),
+    }
+    for name, (repo, pattern) in dependencies.items():
+        found = re.search(pattern, body)
+        if not found: raise ValueError("Intel runtime release does not identify " + name)
+        ref = found.group(1) if found.lastindex else found.group(0)
+        if name == "libvpl" and ref != inputs["intel"]["libvpl"]:
+            raise ValueError("dispatcher differs from Intel's declared stack")
+        add(name, "https://github.com/"+repo+".git", ref)
+    add("media-driver", "https://github.com/"+INTEL_MEDIA_REPO+".git", inputs["intel"]["media_driver"])
+    add("vpl-gpu-rt", "https://github.com/"+INTEL_VPL_REPO+".git", inputs["intel"]["vpl_gpu_rt"])
+    tree = github_api(f"repos/{WOLF_REPO}/git/trees/{wolf_sha}?recursive=1")
+    if tree.get("truncated"): raise ValueError("truncated Wolf source tree")
+    cmake = {}
+    for entry in tree["tree"]:
+        path = entry["path"]
+        if path.startswith("tests/") or not (path.endswith("CMakeLists.txt") or path.endswith(".cmake")): continue
+        text = raw(WOLF_REPO, wolf_sha, path)
+        for block in re.finditer(r"FetchContent_Declare\(\s*([\w-]+)(.*?)\)\s*", text, re.S):
+            name, content = block.groups()
+            repo = re.search(r"GIT_REPOSITORY\s+([^\s)]+)", content)
+            ref = re.search(r"GIT_TAG\s+([^\s)]+)", content)
+            if not repo: continue  # Boost uses distribution packages, not its URL fallback.
+            key = "wolf-"+name.lower()
+            add(key, repo.group(1), ref.group(1) if ref else "HEAD")
+            cmake[name.upper()] = key
+    inputs["sources"] = sources
+    inputs["cmake_sources"] = cmake
+    # Toolchain discovery is separate from the runtime payload.
+    rust_tag = rust.group(1)+"-slim-bookworm"
+    inputs["toolchain"] = {"rust_version":rust.group(1), "image":f"rust:{rust_tag}", "digest":hub_digest("rust", rust_tag)}
+    inputs["refresh_week"] = datetime.now(timezone.utc).strftime("%G-W%V")
+    inputs["distribution_snapshot"] = datetime.now(timezone.utc).strftime("%Y%m%dT%H0000Z")
+    inputs["packaging"] = packaging_identity(Path(__file__).resolve().parents[1])
+    manifest["input_hash"] = fingerprint(inputs)
+    manifest["candidate_tag"] = candidate_tag(wolf_sha, manifest["input_hash"])
+    manifest["version"] = 2
+    return manifest
+
+
+def packaging_identity(root):
+    packaging = hashlib.sha256()
+    for path in sorted([*root.glob("docker/*"), *root.glob("scripts/*")]):
+        if path.is_file():
+            packaging.update(str(path.relative_to(root)).encode()+b"\0"+path.read_bytes())
+    revision=subprocess.check_output(["git","rev-parse","HEAD"],cwd=root,text=True).strip()
+    dirty=bool(subprocess.check_output(["git","status","--porcelain","--","docker","scripts"],cwd=root,text=True).strip())
+    return {"sha256":packaging.hexdigest(), "revision":revision, "dirty":dirty}
 
 
 if __name__ == "__main__":

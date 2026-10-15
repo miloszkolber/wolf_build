@@ -18,7 +18,7 @@ Proposed capabilities are `intel-runtime`, `upstream-maintenance` and `gate-inte
 
 ## Status and authority
 
-Planning authorized. The operator also authorizes changes to the shared gate owner to support both inference and Wolf. This turn records those changes as a plan. No executable runtime, shared gate code change, registry publication or host rollout is delivered by this proposal.
+Implementation is authorized. The shared gate is implemented, reviewed, published and archived in its owner. Wolf source acquisition, Docker/Compose definitions and maintenance/promotion workflows are under verification. No accepted Wolf release or host rollout is established merely by delivering those files.
 
 ## Dependencies and consequential unknowns
 

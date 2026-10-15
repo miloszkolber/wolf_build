@@ -1,0 +1,64 @@
+"""Final-image checks. Static plugin checks are not hardware acceptance."""
+import argparse
+import json
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+
+
+def run(*args):
+    return subprocess.check_output(args, stderr=subprocess.STDOUT, text=True)
+
+
+def static():
+    manifest = json.loads(Path("/licenses/manifest.json").read_text())
+    if manifest.get("version") != 2:
+        raise ValueError("missing resolved input lock")
+    for path in [Path("/wolf/wolf"), Path("/wolf/fake-udev"), *Path("/opt/wolf-runtime/lib").rglob("*.so*")]:
+        if path.is_symlink() or not path.is_file(): continue
+        with path.open("rb") as binary:
+            if binary.read(4) != b"\x7fELF": continue
+        if "not found" in run("ldd",str(path)): raise ValueError("missing library: "+str(path))
+    # Software factories are device-independent. VA and QSV factories are often
+    # registered only after driver/device probing, so require their plugins here.
+    for element in ("appsrc", "appsink", "videoconvert", "videoscale", "audioconvert", "audioresample", "opusenc", "opusdec", "pulsesrc", "udpsink", "rtph264pay", "h264parse", "h265parse", "av1parse", "x264enc", "x265enc", "av1enc", "interpipesrc", "interpipesink", "waylanddisplaysrc"):
+        run("gst-inspect-1.0",element)
+    for plugin in ("va", "qsv"):
+        run("gst-inspect-1.0",plugin)
+    forbidden = ("nvrtc", "nvidia", "nouveau", "radeonsi", "i965_drv_video")
+    paths = [*Path("/opt/wolf-runtime").rglob("*"), *Path("/usr/local").rglob("*")]
+    if any(any(word in p.name.lower() for word in forbidden) for p in paths):
+        raise ValueError("unexpected multi-vendor payload")
+    if any(Path("/usr/bin",tool).exists() for tool in ("gcc", "g++", "clang", "cargo", "cmake")):
+        raise ValueError("build tooling in runtime")
+    print("Static libraries/plugins/license manifest checked; no GPU acceptance claimed.")
+
+
+def health():
+    # Presence of a supervisor process alone is not runtime readiness.
+    workers = []
+    for path in Path("/proc").glob("[0-9]*/comm"):
+        try:
+            if path.read_text().strip() == "wolf": workers.append(path)
+        except (OSError, ProcessLookupError): pass
+    if not workers: return False
+    for port in (47984,47989,48010):
+        try:
+            with socket.create_connection(("127.0.0.1",port),timeout=0.5): pass
+        except OSError: return False
+    return True
+
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--static",action="store_true")
+    parser.add_argument("--health",action="store_true")
+    args=parser.parse_args()
+    if args.static: static()
+    elif args.health: sys.exit(0 if health() else 1)
+    else: parser.error("select --static or --health")
+
+
+if __name__ == "__main__": main()

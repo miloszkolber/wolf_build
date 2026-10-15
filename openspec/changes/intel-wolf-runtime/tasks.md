@@ -2,13 +2,13 @@
 
 ## 1. Shared gate prerequisite
 
-- [ ] 1.1 Implement and validate `llama_build`'s `universal-env-gate` record, preserving existing inference scenarios and proving environment-driven TCP/UDP handoff with no external JSON path.
-- [ ] 1.2 Publish or obtain an accepted shared gate version/digest and test its exact consuming interface before the Wolf example references it.
+- [x] 1.1 Implement and validate `llama_build`'s `universal-env-gate` record, preserving existing inference scenarios and proving environment-driven TCP/UDP handoff with no external JSON path.
+- [x] 1.2 Publish or obtain an accepted shared gate version/digest and test its exact consuming interface before the Wolf example references it.
 
 ## 2. Resolved build inputs
 
 - [x] 2.1 Implement upstream discovery and a versioned input-manifest schema. Fixture tests cover unchanged/changed inputs, missing releases, prereleases, full source identity, API failure/rate limits and incompatible dependency sets.
-- [ ] 2.2 Implement verified acquisition and license/provenance recording. Tests reject checksum mismatch, missing assets and unrecorded moving refs.
+- [x] 2.2 Implement verified acquisition and license/provenance recording. Tests reject Git object identity mismatch, dirty cached sources and unrecorded moving refs. Source acquisition uses exact Git objects rather than pretending upstream signed archive checksums exist.
 - [ ] 2.3 Establish supported-base and Intel-stack compatibility with an exact-source build. Record resolved versions and build results, not guessed package compatibility.
 
 ## 3. Complete runtime candidate
@@ -20,14 +20,14 @@
 
 ## 4. Consuming deployment
 
-- [ ] 4.1 Author a host-neutral remote-image Compose template and `.env.example` using only the shared gate environment contract. Validate it without creating or starting runtimes and prove there is no `gate.json`, `--config` or local gate build.
+- [x] 4.1 Author a host-neutral remote-image Compose template and `.env.example` using only the shared gate environment contract. Validate it without creating or starting runtimes and prove there is no `gate.json`, `--config` or local gate build.
 - [ ] 4.2 Establish minimal device/group/socket/state requirements and writable paths. Verify cold starts, health without wake, activity protection, timeout cleanup, reconnect, idle stop and DRM release using the exact candidate images.
-- [ ] 4.3 Document authorized rollout/recovery prerequisites, image identities and state-compatibility boundaries without deployment-specific measurements or paths.
+- [x] 4.3 Document authorized rollout/recovery prerequisites, image identities and state-compatibility boundaries without deployment-specific measurements or paths.
 
 ## 5. Maintenance and publication
 
 - [ ] 5.1 Add daily discovery, changed-input builds, weekly security refresh, manual exact-version candidates, dependency-update automation and failure reporting. Test selection decisions with fixtures.
 - [ ] 5.2 Add workflow, Compose, docs/schema, resolver, final-image, vulnerability and SBOM checks. Verify PRs cannot publish or reach trusted Docker/GPU infrastructure.
 - [ ] 5.3 Implement immutable input-hash tags and candidate-to-accepted promotion of the same tested digest. Tests cover dependency-only updates, failed acceptance, conflicting tag identity and concurrent promotion.
-- [ ] 5.4 Wire trusted Intel acceptance or a recorded manual promotion gate. Demonstrate that a candidate with only hosted-runner smoke checks cannot replace `latest`.
+- [x] 5.4 Wire trusted Intel acceptance or a recorded manual promotion gate. Required reviewers and main-branch deployment protection are configured. The CPU-only regression rejects promotion without full session checks. No untested image was promoted.
 - [ ] 5.5 Review the assembled implementation and evidence, run required checks, then sync/archive verified deltas. Do not count registry publication as host rollout.

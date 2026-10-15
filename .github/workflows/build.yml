@@ -1,0 +1,208 @@
+name: Build candidate
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      wolf_sha:
+        description: Optional exact Wolf source commit
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: candidate-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.3'
+      - run: python3 -m unittest discover -s tests
+      - run: bun scripts/check-docs.mjs
+      - run: OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
+      - name: Compose syntax without starting containers
+        run: |
+          cp compose/.env.example compose/.env
+          docker compose --env-file compose/.env -f compose/docker-compose.yaml --profile runtime config --quiet
+      - uses: docker://rhysd/actionlint:1.7.12
+  build:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      tag: ${{ steps.inputs.outputs.tag }}
+      changed: ${{ steps.existing.outputs.unchanged != 'true' }}
+      input: ${{ steps.inputs.outputs.input }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v4
+        with:
+          path: .build/sources
+          key: sources-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: sources-${{ runner.os }}-
+      - name: Resolve once and acquire exact inputs
+        id: inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WOLF_SHA: ${{ inputs.wolf_sha }}
+          GATE_TAG: ${{ vars.GATE_TAG }}
+          GATE_DIGEST: ${{ vars.GATE_DIGEST }}
+        run: |
+          test -n "$GATE_TAG" && test -n "$GATE_DIGEST"
+          python3 scripts/resolve.py --lock --wolf-sha "$WOLF_SHA" --gate-tag "$GATE_TAG" --gate-digest "$GATE_DIGEST"
+          python3 scripts/build-inputs.py
+          source .build/build.env
+          {
+            echo "base=$BASE_IMAGE"
+            echo "rust=$RUST_IMAGE"
+            echo "refresh=$SECURITY_REFRESH"
+            echo "tag=$CANDIDATE_TAG"
+            echo "input=$INPUT_SHA256"
+            echo "wolf=$WOLF_SHA"
+            echo "snapshot=$UBUNTU_SNAPSHOT"
+            echo "recipe=$RECIPE_REVISION"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v4
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Skip unchanged inputs and reject tag identity collisions
+        id: existing
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TAG: ${{ steps.inputs.outputs.tag }}
+          INPUT_SHA256: ${{ steps.inputs.outputs.input }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          image="ghcr.io/${OWNER,,}/wolf_runtime:$TAG"
+          owner_type="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.owner.type')"
+          namespace=users
+          if [ "$owner_type" = Organization ]; then namespace=orgs; fi
+          if ! gh api "$namespace/$OWNER/packages/container/wolf_runtime" > package.json 2> package-error.txt; then
+            if grep -q '(HTTP 404)' package-error.txt; then
+              echo 'No readable package exists yet; first publication will create it.'
+              exit 0
+            fi
+            cat package-error.txt >&2; exit 1
+          fi
+          if docker manifest inspect "$image" > /dev/null 2> registry-error.txt; then
+            docker pull "$image"
+            previous="$(docker image inspect "$image" --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')"
+            test "$previous" = "$INPUT_SHA256" || { echo 'Immutable tag identity collision' >&2; exit 1; }
+            echo 'unchanged=true' >> "$GITHUB_OUTPUT"
+          elif ! grep -qiE 'not found|manifest unknown' registry-error.txt; then
+            cat registry-error.txt >&2; exit 1
+          fi
+      - uses: docker/setup-buildx-action@v4
+      - name: Build candidate once
+        if: steps.existing.outputs.unchanged != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/wolf.Dockerfile
+          platforms: linux/amd64
+          load: true
+          tags: wolf-test:local
+          build-args: |
+            BASE_IMAGE=${{ steps.inputs.outputs.base }}
+            RUST_IMAGE=${{ steps.inputs.outputs.rust }}
+            SECURITY_REFRESH=${{ steps.inputs.outputs.refresh }}
+            INPUT_SHA256=${{ steps.inputs.outputs.input }}
+            WOLF_SHA=${{ steps.inputs.outputs.wolf }}
+            UBUNTU_SNAPSHOT=${{ steps.inputs.outputs.snapshot }}
+            RECIPE_REVISION=${{ steps.inputs.outputs.recipe }}
+          cache-from: type=gha,scope=wolf
+          cache-to: type=gha,scope=wolf,mode=min,ignore-error=true
+      - name: Verify final runtime without Docker authority or GPU
+        if: steps.existing.outputs.unchanged != 'true'
+        run: docker run --rm --network none --entrypoint python3 wolf-test:local /app/check-runtime.py --static
+      - name: Export candidate for SBOM and vulnerability checks
+        if: steps.existing.outputs.unchanged != 'true'
+        run: docker save wolf-test:local -o candidate.tar
+      - name: SBOM and vulnerability assessment
+        if: steps.existing.outputs.unchanged != 'true'
+        run: |
+          docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --format cyclonedx --output /work/candidate.cdx.json
+          docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --severity HIGH,CRITICAL --exit-code 1 --format json --output /work/vulnerabilities.json
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && steps.existing.outputs.unchanged != 'true'
+        with:
+          name: publication-image
+          path: candidate.tar
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: candidate-evidence
+          include-hidden-files: true
+          path: |
+            .build/context/manifest.json
+            candidate.cdx.json
+            vulnerabilities.json
+            registry-error.txt
+  publish:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: publication-image
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish immutable candidate, never latest
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TAG: ${{ needs.build.outputs.tag }}
+          INPUT_SHA256: ${{ needs.build.outputs.input }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          docker load -i candidate.tar
+          loaded="$(docker image inspect wolf-test:local --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')"
+          test "$loaded" = "$INPUT_SHA256"
+          image="ghcr.io/${OWNER,,}/wolf_runtime:$TAG"
+          exists=false
+          if docker buildx imagetools inspect "$image" > existing.txt 2> registry-error.txt; then
+            docker pull "$image"
+            previous="$(docker image inspect "$image" --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')"
+            test "$previous" = "$INPUT_SHA256" || { echo 'Immutable tag identity collision' >&2; exit 1; }
+            echo 'Identical candidate identity already exists; retaining its immutable digest.'
+            exists=true
+          elif ! grep -qiE 'not found|manifest unknown' registry-error.txt; then
+            # GHCR can deny a pull scope for a namespace that has never existed.
+            # Confirm absence via authenticated package metadata, not by treating
+            # arbitrary registry/network errors as permission to overwrite.
+            owner_type="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.owner.type')"
+            namespace=users
+            if [ "$owner_type" = Organization ]; then namespace=orgs; fi
+            if gh api "$namespace/$OWNER/packages/container/wolf_runtime" > package.json 2> package-error.txt; then
+              cat registry-error.txt >&2; exit 1
+            elif ! grep -q '(HTTP 404)' package-error.txt; then
+              cat package-error.txt >&2; exit 1
+            fi
+          fi
+          if [ "$exists" = false ]; then
+            docker tag wolf-test:local "$image"
+            docker push "$image"
+          fi
+          docker buildx imagetools inspect "$image" >> "$GITHUB_STEP_SUMMARY"

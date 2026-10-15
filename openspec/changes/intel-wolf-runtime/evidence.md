@@ -1,24 +1,29 @@
 # Evidence and verification status
 
-## Source findings
+## Current state
 
-Planning was grounded in the deployed upstream image's source revision `facb8e0ccd22fd6091cd904741e4dcf895e47b1b` and its `docker/wolf.Dockerfile`, `docker/gpu-drivers.Dockerfile` and `docker/gstreamer.Dockerfile`. The baseline already uses multi-stage Wolf builds, a custom GStreamer compositor, embedded PulseAudio/Supervisor and fake-udev. This is source evidence for preserving those boundaries, not a compatibility test of this project's proposed image.
+Gate is complete and published. Wolf implementation is present but final-image bring-up is still in progress. Do not infer runtime or session acceptance from source delivery. No production deployment or pairing state has been changed.
 
-Shared gate source reviewed at `llama_build` revision `b934145164d006c955636f4f6fc3b85a64b60628`: `cmd/gate/env.go` creates only the inference persistent-proxy profile, while `cmd/gate/main.go` already implements port handoff through explicit JSON configuration. Its handoff listeners bind all IPv4 interfaces independently of `GATE_HOST`. The shared change must make profile selection environment-driven, remove the external file path and preserve listener/start/activity behavior.
+The repository was initially private, where GitHub rejected required-reviewer protection. The operator subsequently authorized public visibility. The repository is now public and `intel-acceptance` has required-reviewer protection and a main-branch deployment policy. The guard was preserved rather than bypassed. This enables protected promotion but is not session acceptance or permission to promote an untested image.
 
-Host-specific image inventories, GPU measurements and deployment settings remain outside this repository. No host-specific benchmark report is copied here.
+## Delivered and checked boundaries
 
-## Executed checks
+- Gate PR 4 was reviewed, repaired, merged and published in `llama_build`. Its archived change owner is `openspec/changes/archive/2026-10-15-universal-env-gate/` in that repository.
+- Published gate `816b5f152e99` has digest `sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40`. Its extracted executable passed both profile traffic tests against mock Docker HTTP and real runtime TCP sockets. A read-only/network-isolated image health check passed. This is not Moonlight acceptance.
+- Wolf source discovery resolves the `stable` branch, the latest compatible GStreamer patch (currently `1.26.11`), Wolf's declared compositor pin, interpipe, the Intel `26.3.5` media/VPL pair and its declared libva/GMM/dispatcher sources, CMake source dependencies, pinned Rust/base images and a signed Ubuntu repository snapshot.
+- Acquisition checked out the full selected Git objects and pinned submodules, retained source licenses and generated a version 2 Docker context. No upstream-signed archive checksum is fabricated. Dirty source caches and stale packaging identity are rejected.
+- The development-container unit suite passed `22` tests. Coverage includes source/input identity, incompatible dependency sets, missing releases, prereleases, rate limits, legitimate submodule updates, cache edits/object mismatch and acceptance records rejecting CPU-only smoke evidence, incomplete checks, wrong digests and software fallback.
+- Repository documentation checks passed for `15` Markdown files. Strict OpenSpec `1.14.1` validation passed for the active change. Workflow validation with `actionlint 1.7.12` passed. The full Compose configuration, including its runtime profile, validated without creating or starting service containers.
+- An isolated loopback registry fixture verified that `imagetools create --prefer-index=false` preserves the exact digest through candidate, accepted and latest tags. This used the tiny gate image as a fixture, not a Wolf release or acceptance record. Digest extraction uses descriptor JSON and `jq`, not an unsupported scalar formatting assumption.
 
-- `python3 -m unittest discover -s tests` in the development container: `9` resolver tests pass, covering manifest identity, full source identity, missing/bad releases, incompatible Intel/GStreamer/gate sets and API retry/missing behavior.
-- Live `python3 scripts/resolve.py` in the development container: resolves Wolf `stable`, GStreamer `1.26.7`, compositor/interpipe commits, Intel `26.3.5` pair with LibVPL and Ubuntu `26.04` amd64 digest, emitting a `stable-<short>-<input-hash>` candidate tag with gate `pending-publication`.
-- Pinned OpenSpec `1.14.1` `validate --all --strict`, run in the development container: `change/intel-wolf-runtime` passed, totals `1 passed, 0 failed`.
-- The shared owner's existing `checkDocumentation` function was used as a temporary read-only checker for this repository: `13` Markdown files checked, zero failures. This establishes local-link, scenario and task structure, not a delivered repository-local checker.
-- The companion shared-owner record passed its repository documentation check and pinned OpenSpec validation: `19` Markdown files checked, zero failures, and `5` OpenSpec items passed with zero failures.
-- Gate-only example added in this repository: `compose/gate.compose.yaml`, `compose/gate.env.example` and `compose/README.md`. Wolf Compose validates with `docker compose --env-file compose/gate.env -f compose/gate.compose.yaml config --quiet` using the shared gate contract. The example has no `gate.json`, `--config`, build context, GPU devices or local gate implementation.
-- Shared gate implementation is complete in `llama_build` with socket-level handoff evidence and a local candidate image, but no published gate version/digest has been recorded yet. The Wolf runtime image, Intel acceptance and promotion pipeline remain pending.
-- Input resolver delivered in this repository: `scripts/resolve.py` with versioned manifest schema and `tests/test_resolve.py` fixture coverage. Live discovery verified in the development container: Wolf `stable` branch, GStreamer tag check, compositor pin to full commit, interpipe `master`, Intel media/VPL/LibVPL releases and Ubuntu `26.04` amd64 digest. The manifest records gate status as `pending-publication` until the shared gate publishes. Manifests are generated per build under `.build/` and are not committed.
+## Build bring-up findings
 
-## Not established
+The first supported-base builds established the need for explicit XCB development dependencies in libva. Intel's media-driver build treats a GCC 15 array-bounds diagnostic as an error, so the CMake build selects Clang without disabling the warning gate. Clang is explicitly paired with the default GCC standard-library installation to avoid selecting a partially installed alternate GCC directory.
 
-No Wolf build, new image, GPU codec/zero-copy test, Moonlight session, candidate promotion or deployment has been executed for this proposal. The task ledger remains unchecked except for the gate-only example boundary. Supported-base compatibility, the minimal plugin set and automated hardware-acceptance infrastructure remain implementation work.
+Ubuntu's minimal base does not initially provide a usable default TLS trust path for snapshot bootstrapping. The build copies the CA bundle from the pinned Rust image and passes its path explicitly to APT, retaining certificate and repository-signature verification. A fresh snapshot-index diagnostic succeeded. APT index failures are fatal instead of appearing later as missing packages.
+
+These findings explain the implementation choices. The ongoing final-image build, plugin checks, Intel encode probes and startup/shutdown tests must still pass before the runtime tasks are checked.
+
+## Unfinished acceptance
+
+No completed Wolf image, registry candidate, hardware encode result, Moonlight session or accepted `latest` is recorded yet. Session latency/quality, zero-copy behavior, audio, controls, Steam/Lutris integration and idle DRM release remain unverified. Hardware/deployment measurements belong outside this repository. The active change is not ready to archive.

@@ -1,15 +1,49 @@
 # wolf_build
 
-Plan for minimal Intel GPU Wolf streaming images, maintained from upstream releases and served on demand by the shared gate image published by [llama_build](https://github.com/miloszkolber/llama_build).
+Intel-only Wolf streaming runtime builds, maintained from upstream sources and started on demand by the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
-**Status: runtime planning, gate integration example available.** No Wolf runtime image or executable build workflow has been delivered. The [gate-only example](compose/README.md) requires a separately created runtime and a compatible shared gate image. Proposed runtime behavior lives in [the initial change](openspec/changes/intel-wolf-runtime/proposal.md), not in implemented specs.
+**Status: implementation and candidate verification in progress.** Gate is published and independently tested. Wolf source acquisition, Docker build, Compose and maintenance/promotion workflows are present. A working Wolf runtime image, full session acceptance and accepted `latest` must not be inferred from those files. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [actual evidence](openspec/changes/intel-wolf-runtime/evidence.md).
 
-## Direction
+## Build
 
-- Publish one `wolf_runtime` image for `linux/amd64`, retaining upstream Wolf, its compositor, input integration and embedded audio.
-- Use a supported distribution base and an explicitly selected Intel VA-API/VPL and Mesa graphics stack. Do not transplant the SYCL inference stack.
-- Discover upstream updates daily, resolve exact inputs, test candidates and publish immutable build tags plus a tested `latest`.
-- Consume the existing published `gate` image. Do not fork or rebuild gate here. Gate and runtime settings come from environment variables, with no `gate.json` or `--config` mount.
-- Keep Steam/Lutris application images outside this repository's build scope. Preserve their integration and state.
+Run Python/Bun commands in the development container. Run Docker commands against the development Docker context. Do not install development tooling on the host.
 
-Start with [project scope](openspec/project.md), [design](openspec/changes/intel-wolf-runtime/design.md), [tasks](openspec/changes/intel-wolf-runtime/tasks.md) and [verification status](openspec/changes/intel-wolf-runtime/evidence.md).
+```sh
+python3 -m unittest discover -s tests
+bun scripts/check-docs.mjs
+OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
+python3 scripts/resolve.py --lock --gate-tag 816b5f152e99 --gate-digest sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40
+python3 scripts/build-inputs.py
+bash scripts/build.sh
+docker run --rm --network none --entrypoint python3 wolf-candidate:local /app/check-runtime.py --static
+```
+
+Use `GH_TOKEN` for authenticated upstream API discovery when needed. Never put it in manifests, image args or repository files. Resolution/API failure stops the candidate instead of selecting an unrecorded fallback. `.build/` holds generated manifests, sources and the Docker context. Do not commit it.
+
+The lock resolves Wolf's `stable` branch, the latest patch in its compatible GStreamer series, Wolf's declared compositor pin, interpipe, an Intel media/VPL stack with its declared libva/GMM/dispatcher versions, source-level CMake dependencies, the Rust toolchain digest and the Ubuntu platform digest. Build sources are acquired by full Git object identity, including pinned submodules. This is not a claim that Git archives carry upstream SHA256 signatures. Cargo's lock verifies crate inputs.
+
+Builder and runtime use the same signed Ubuntu repository snapshot recorded in the manifest. Daily snapshot advancement captures security updates. The final image records distribution/build package versions and source/license inventories. Full input identity includes the packaging files, not only Wolf's upstream version. Builds are not advertised as bit-reproducible.
+
+Only the runtime is built here. No gate source, SYCL stack, NVIDIA CUDA/NVRTC runtime or Steam/Lutris distribution is copied into it. Intel VA/VPL, required Mesa rendering, embedded audio, input integration and supported software fallback encoders are preserved. GStreamer plugins are explicitly selected, not reduced using `ldd` alone.
+
+## Run and accept
+
+The [Compose example](compose/README.md) uses one environment file and a published, device-free gate. Runtime creation is separate from startup. Production rollout is not part of a build.
+
+An isolated Intel encode probe, without Docker authority or production state, can be run against a completed candidate:
+
+```sh
+docker run --rm --network none --device /dev/dri/renderD128 --entrypoint python3 -v "$PWD/scripts/test-intel.py:/test-intel.py:ro" wolf-candidate:local /test-intel.py
+```
+
+Choose the target device explicitly. This probes supported hardware encoders. It does not prove Wayland capture, zero-copy session behavior, Moonlight quality, audio, controllers or idle DRM release. Those require the [acceptance procedure](openspec/changes/intel-wolf-runtime/design.md#acceptance-and-recovery) and an operator-reviewed record.
+
+## Maintain and publish
+
+The candidate workflow runs daily in UTC and on pushes, PRs and manual requests. Set repository variables `GATE_TAG` and `GATE_DIGEST` to an accepted shared-gate version before enabling registry publication. Build once, run final-image/plugin checks, produce a CycloneDX SBOM and fail on HIGH/CRITICAL vulnerabilities. No blanket vulnerability suppression is configured. Changed candidates receive immutable input-hash tags. The same tag is never overwritten with a conflicting full input identity.
+
+PR build jobs have read-only package permissions and use disposable hosted runners, not trusted Docker/GPU infrastructure. Only a separate default-branch publication job receives package write authority. Candidate publication never advances `latest`.
+
+The manual promotion workflow requires an `intel-acceptance` environment with required reviewers, an exact candidate digest and matching external acceptance evidence. Without those controls and successful session/codec evidence it fails closed. It tests digest-preserving staging before changing `latest` and retains accepted digest tags. See [promotion record format](openspec/acceptance.md).
+
+[`openspec/`](openspec/README.md) owns scope, contracts, tasks and verification. Host paths, credentials, hardware measurements and deployment-specific reports stay outside this repository.

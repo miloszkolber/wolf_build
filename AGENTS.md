@@ -1,6 +1,6 @@
 # Repository workflow
 
-- Start with `openspec/README.md` and the active change before editing. This repository currently contains a plan, not an implemented runtime.
+- Start with `openspec/README.md` and the active change before editing. Source/build delivery is separate from final-image verification and Intel/Moonlight acceptance.
 - Keep implemented contracts in `openspec/specs/` only after delivery and verification. Keep proposed requirements, tasks and evidence in the active change.
 - The shared gate implementation and publication belong to `llama_build`. Do not create a second gate implementation or publication pipeline here.
 - Keep documentation and examples host-neutral. Deployment paths, group IDs, credentials and hardware measurements belong in the deployment owner's local documentation.

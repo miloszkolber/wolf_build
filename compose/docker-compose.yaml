@@ -1,0 +1,44 @@
+name: wolf
+services:
+  wolf:
+    image: ${GATE_IMAGE:?Select the accepted shared gate image}
+    container_name: ${GATE_CONTAINER_NAME:-wolf}
+    restart: always
+    network_mode: host
+    user: "1000:1000"
+    env_file: .env
+    group_add: ["${DOCKER_GID:?Set Docker socket group}"]
+    read_only: true
+    volumes: ["${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:rw"]
+    healthcheck:
+      test: ["CMD", "/app/gate", "--health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+  wolf-runtime:
+    image: ${WOLF_IMAGE:?Select a tested Wolf candidate digest}
+    container_name: ${GATE_RUNTIME:-wolf-runtime}
+    restart: "no"
+    profiles: [runtime]
+    network_mode: host
+    env_file: .env
+    group_add: ["${RENDER_GID:?Set render device group}"]
+    device_cgroup_rules:
+      - "c 13:* rmw"
+      - "c ${HIDRAW_MAJOR:?Read the hidraw major from the target kernel}:* rmw"
+    devices:
+      - "${DRI_CARD:-/dev/dri/card0}:${DRI_CARD:-/dev/dri/card0}"
+      - "${WOLF_RENDER_NODE:-/dev/dri/renderD128}:${WOLF_RENDER_NODE:-/dev/dri/renderD128}"
+      - /dev/uinput
+      - /dev/uhid
+    volumes:
+      - "${STATE_DIR:-./state}:/etc/wolf:rw"
+      - "${SOCKET_DIR:-./state/sockets}:/run/user/wolf:rw"
+      - "${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock:rw"
+      # Hotplugged input/hidraw nodes must be visible after container creation.
+      - /dev:/dev:rw
+      - /run/udev:/run/udev:ro
+    stop_grace_period: 45s
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"

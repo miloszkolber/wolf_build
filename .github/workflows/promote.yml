@@ -1,0 +1,85 @@
+name: Promote accepted digest
+on:
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: Exact candidate image digest (sha256)
+        type: string
+        required: true
+      evidence_url:
+        description: HTTPS URL for the operator-reviewed acceptance JSON
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: wolf-runtime-promotion
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: github.ref == 'refs/heads/main'
+    environment: intel-acceptance
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Require protected manual approval and matching evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIGEST: ${{ inputs.digest }}
+          EVIDENCE_URL: ${{ inputs.evidence_url }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/environments/intel-acceptance" > environment.json
+          python3 - <<'PY'
+          import json, os, urllib.request
+          from scripts.promotion import validate
+          env=json.load(open('environment.json'))
+          if not any(r.get('type')=='required_reviewers' and r.get('reviewers') for r in env.get('protection_rules', [])):
+              raise SystemExit('intel-acceptance must have required reviewers configured')
+          url=os.environ['EVIDENCE_URL']
+          if not url.startswith('https://'):
+              raise SystemExit('evidence URL must use HTTPS')
+          with urllib.request.urlopen(url, timeout=30) as response:
+              if not response.url.startswith('https://'): raise SystemExit('insecure evidence redirect')
+              record=json.loads(response.read(1048577))
+          validate(record,os.environ['DIGEST'])
+          PY
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote exact candidate without rebuilding
+        env:
+          OWNER: ${{ github.repository_owner }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          image="ghcr.io/${OWNER,,}/wolf_runtime"
+          registry_digest() {
+            docker buildx imagetools inspect --format '{{json .Manifest}}' "$1" | jq -er '.digest'
+          }
+          docker buildx imagetools inspect "$image@$DIGEST"
+          # Establish digest-preserving retagging before touching latest.
+          approved="$image:accepted-${DIGEST#sha256:}"
+          docker buildx imagetools create --prefer-index=false --tag "$approved" "$image@$DIGEST"
+          staged="$(registry_digest "$approved")"
+          test "$staged" = "$DIGEST"
+          previous=''
+          if registry_digest "$image:latest" > previous.txt 2> previous-error.txt; then
+            previous="$(cat previous.txt)"
+          elif ! grep -qiE 'not found|manifest unknown' previous-error.txt; then
+            cat previous-error.txt >&2; exit 1
+          fi
+          docker buildx imagetools create --prefer-index=false --tag "$image:latest" "$image@$DIGEST"
+          actual="$(registry_digest "$image:latest")"
+          if [ "$actual" != "$DIGEST" ]; then
+            if [ -n "$previous" ]; then
+              docker buildx imagetools create --prefer-index=false --tag "$image:latest" "$image@$previous"
+            fi
+            echo 'Promotion digest mismatch' >&2; exit 1
+          fi
+          echo "Accepted latest: $image@$DIGEST" >> "$GITHUB_STEP_SUMMARY"

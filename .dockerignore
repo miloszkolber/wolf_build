@@ -1,0 +1,7 @@
+*
+!docker/
+!scripts/
+!.build/
+.build/*
+!.build/context/
+!.build/context/**
