@@ -2,7 +2,7 @@
 
 Intel-focused Wolf streaming runtime and minimal Steam/Lutris application builds, maintained from upstream sources and packages. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
-**Status: candidate verification in progress.** Gate and Steam/Lutris candidates are published. All three images passed bounded payload/isolated checks and local HIGH/CRITICAL vulnerability scans. Wolf's isolated Intel encode and gate cold-request/idle-stop probes passed. Runtime registry verification and full game/session acceptance remain open. No accepted `latest` or production rollout is established. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [actual evidence](openspec/changes/intel-wolf-runtime/evidence.md).
+**Status: candidate verification in progress.** Gate, runtime and Steam/Lutris candidates are published. All three images passed bounded payload/isolated checks and HIGH/CRITICAL vulnerability scans. Wolf's isolated Intel encode and gate cold-request/idle-stop probes passed. Full game/session acceptance remains open. No accepted `latest` or production rollout is established. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [actual evidence](openspec/changes/intel-wolf-runtime/evidence.md).
 
 ## Build
 

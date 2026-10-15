@@ -1,6 +1,6 @@
 # Evidence and verification status
 
-Gate and Steam/Lutris candidates are published. Wolf images have built and passed bounded checks and local scans. Runtime registry publication and full game/session acceptance remain open. No production deployment or pairing state has changed. No accepted `latest` exists for any image.
+Gate, runtime and Steam/Lutris candidates are published. All three images passed bounded checks and clean HIGH/CRITICAL scans. Full game/session acceptance remains open. No production deployment or pairing state has changed. No accepted `latest` exists for any image.
 
 ## Published candidates
 
@@ -8,10 +8,13 @@ The application workflow passed on source `060dca2` (Actions run `38755980934`):
 
 | Public candidate | Published digest |
 | --- | --- |
+| `ghcr.io/miloszkolber/wolf_runtime:stable-6a5053b4ebbb-15bd62c9d01d` | `sha256:295fb67e255754caa69b4d85e78b6ce29c8fb79aa7db1687122ed958300d643a` |
 | `ghcr.io/miloszkolber/wolf_steam:candidate-54bdd4ad9b367169` | `sha256:d11afd56b77a55958839c52456cd2acffa88d5f518a9134c16e3b8e8731b2718` |
 | `ghcr.io/miloszkolber/wolf_lutris:candidate-54bdd4ad9b367169` | `sha256:e784dc119ed40ea0bd7cd1b269b6fadec29776ffcee109dd2548913d214cd82d` |
 
-These are unaccepted candidates, not `latest` promotions. Published gate `816b5f152e99` (`sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40`) passed both profile traffic tests and a read-only image health check. Gate internals belong to `llama_build` (`openspec/changes/archive/2026-10-15-universal-env-gate/`).
+The runtime workflow passed on source `8623131` (Actions run `38753835555`): unit/docs/schema/Compose checks, exact-source build, final-image static check, SBOM and zero HIGH/CRITICAL findings, then immutable publication. The published digest was pulled anonymously and its static check passed with matching input identity. This candidate predates the OCI label correction, so its title still reads `ubuntu`; relabeled candidates build in later runs. These are unaccepted candidates, not `latest` promotions.
+
+These are unaccepted candidates, not `latest` promotions or deployment changes. Published gate `816b5f152e99` (`sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40`) passed both profile traffic tests and a read-only image health check; its internals belong to `llama_build`. Real Intel rendering, audio, controllers and game/session acceptance remain required.
 
 ## Verified image checks
 
@@ -27,4 +30,4 @@ Images now carry accurate OCI title/description labels instead of the inherited 
 
 ## Open acceptance
 
-Runtime registry publication, full Moonlight sessions and accepted `latest` remain open. Session latency/quality, zero-copy behavior, real audio, controls, Steam/Lutris game integration and idle DRM release remain unverified. Hardware/deployment measurements belong outside this repository. The active change is not ready to archive.
+Full Moonlight sessions and accepted `latest` remain open. Session latency/quality, zero-copy behavior, real audio, controls, Steam/Lutris game integration and idle DRM release remain unverified. Hardware/deployment measurements belong outside this repository. The active change is not ready to archive.
