@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG BASE_IMAGE=ubuntu:26.04
-ARG RUST_IMAGE=rust:1.96.0-slim-bookworm
+ARG BASE_IMAGE
+ARG RUST_IMAGE
 FROM ${RUST_IMAGE} AS rust
 FROM ${BASE_IMAGE} AS build
 COPY --from=rust /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

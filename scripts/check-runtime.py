@@ -9,7 +9,7 @@ import sys
 
 
 def run(*args):
-    return subprocess.check_output(args, stderr=subprocess.STDOUT, text=True)
+    return subprocess.check_output(args, stderr=subprocess.STDOUT, text=True, timeout=30)
 
 
 def static():
@@ -20,7 +20,12 @@ def static():
         if path.is_symlink() or not path.is_file(): continue
         with path.open("rb") as binary:
             if binary.read(4) != b"\x7fELF": continue
-        if "not found" in run("ldd",str(path)): raise ValueError("missing library: "+str(path))
+        result=subprocess.run(["ldd",str(path)],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=30)
+        if "not found" in result.stdout: raise ValueError("missing library: "+str(path))
+        if result.returncode and not (path==Path("/wolf/fake-udev") and "not a dynamic executable" in result.stdout):
+            raise ValueError("cannot inspect library closure: "+str(path)+"\n"+result.stdout)
+    # Upstream intentionally links this helper statically for other app images.
+    run("/wolf/fake-udev","--help")
     # Software factories are device-independent. VA and QSV factories are often
     # registered only after driver/device probing, so require their plugins here.
     for element in ("appsrc", "appsink", "videoconvert", "videoscale", "audioconvert", "audioresample", "opusenc", "opusdec", "pulsesrc", "udpsink", "rtph264pay", "h264parse", "h265parse", "av1parse", "x264enc", "x265enc", "av1enc", "interpipesrc", "interpipesink", "waylanddisplaysrc"):

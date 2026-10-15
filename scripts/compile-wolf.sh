@@ -9,6 +9,7 @@ cmake -S /sources/wolf -B /build/wolf -G Ninja -C /locked-sources.cmake \
     -DBUILD_SHARED_LIBS=OFF -DBoost_USE_STATIC_LIBS=ON \
     -DBUILD_FAKE_UDEV_CLI=ON -DBUILD_TESTING=OFF -DADD_STACKTRACE_INFO=OFF \
     -DCPPTRACE_USE_EXTERNAL_LIBDWARF=ON -DCPPTRACE_USE_EXTERNAL_ZSTD=ON \
+    -DCPPTRACE_FIND_LIBDWARF_WITH_PKGCONFIG=ON \
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
 cmake --build /build/wolf --target wolf fake-udev --parallel "$jobs"
 mkdir /wolf
