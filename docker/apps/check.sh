@@ -6,6 +6,8 @@ case "$kind" in
 steam) command -v steam; dpkg-query -W steam-installer steam-libs:i386 ;;
 lutris)
     command -v lutris
+    command -v lspci
+    python3 -c 'import google.protobuf'
     dpkg-query -W lutris wine64 wine32:i386
     # Version probing creates user cache files. Never bake UID-1000 state into HOME.
     version_home=$(mktemp -d)

@@ -21,7 +21,7 @@ python3 scripts/resolve-apps.py > .build/apps.json
 docker build -f docker/apps.Dockerfile --target steam --build-arg BASE_IMAGE="$(jq -r .inputs.base .build/apps.json)" --build-arg REFRESH="$(jq -r .inputs.refresh .build/apps.json)" --build-arg INPUT_SHA256="$(jq -r .input_sha256 .build/apps.json)" -t wolf-steam:local .
 ```
 
-Use target `lutris` for the second image. No GPU, Docker socket or production state is needed to build either target. The common stage is shared locally. [Application CI](../.github/workflows/apps.yml) runs daily, on application-source changes, PRs and manual dispatch. Daily cache invalidation evaluates package updates even without a new Lutris release. There is no snapshot-mirror or distro-port maintenance layer.
+Use target `lutris` for the second image. No GPU, Docker socket or production state is needed to build either target. The common stage is shared locally. [Application CI](../.github/workflows/apps.yml) runs daily, on application-source changes, PRs and manual dispatch. Daily cache invalidation upgrades packages inherited from the base as well as installing current application dependencies, even without a new Lutris release. There is no snapshot-mirror or distro-port maintenance layer.
 
 Each image embeds the resolved base/release/recipe/refresh manifest, the exact installed package versions and package copyright files. CI records image size, CycloneDX SBOM and HIGH/CRITICAL vulnerability findings. It tests non-default UID/GID setup without devices/network. Failed checks prevent candidate publication. PRs cannot publish. Input-hash candidate tags are never overwritten. Installed packages are recorded, not claimed frozen for a later rebuild. Preserve the original tested digest for rollback.
 

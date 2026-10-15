@@ -8,6 +8,7 @@ COPY docker/apps/trim.sh /opt/app/trim.sh
 # Applications need both ABIs for Proton/Wine, not a second audio server.
 RUN test -n "$REFRESH" && dpkg --add-architecture i386 \
     && apt-get -o Acquire::Retries=5 -o APT::Update::Error-Mode=any update \
+    && apt-get -o Acquire::Retries=5 upgrade -y --no-install-recommends \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
        ca-certificates bash tini gosu passwd dbus-daemon \
        sway xwayland x11-utils xauth xdg-utils fonts-dejavu-core locales \
@@ -44,7 +45,7 @@ COPY .build/context/apps/lutris.sha256 /tmp/lutris.sha256
 RUN cd /tmp && sha256sum -c lutris.sha256 \
     && apt-get -o Acquire::Retries=5 -o APT::Update::Error-Mode=any update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-       /tmp/lutris.deb wine wine64 wine32:i386 winetricks cabextract unzip \
+       /tmp/lutris.deb wine wine64 wine32:i386 winetricks cabextract unzip pciutils python3-protobuf \
        libfreetype6:i386 libsdl2-2.0-0:i386 libsqlite3-0:i386 \
        gstreamer1.0-libav:i386 gstreamer1.0-plugins-good:i386 libgstreamer-gl1.0-0:i386 \
     && rm -f /tmp/lutris.deb /tmp/lutris.sha256 && rm -rf /var/lib/apt/lists/* \

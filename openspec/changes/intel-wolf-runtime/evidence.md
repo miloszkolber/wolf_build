@@ -12,13 +12,15 @@ Both optimized application images built and passed final payload/Intel library c
 
 Payload inspection identified distinct non-Intel Vulkan libraries separate from Intel's shared Gallium/LLVM closure. The revised recipe removes those Vulkan drivers and ICDs inside the install layer, preserves both Intel ABIs and logs each omitted file. Removed the unnecessary D-Bus systemd user-session package. SBOM/vulnerability publication and real Intel/game acceptance remain to be established. No production images, application config or game state were changed.
 
+Lutris startup diagnostics identified concrete consumers for two small dependencies: `pciutils` for GPU detection and `python3-protobuf` for the Battle.net source. Both are now explicit rather than accepting silently disabled functionality under `--no-install-recommends`. Application-only source pushes are excluded from the separate runtime workflow to avoid unrelated full source builds.
+
 ## Successful runtime image and isolated checks
 
 The simplified runtime built successfully. A separate network-isolated final-image run passed library/plugin/license checks. An isolated Intel VA probe passed H.264, HEVC and AV1 encode pipelines. This proves hardware encoder availability and basic operation, not zero-copy capture, game quality or Moonlight acceptance. Hardware-specific details and measurements remain in the deployment owner's local evidence.
 
 The exact published gate controlled a uniquely named test runtime in a separate network namespace, with temporary container-owned state and no production ports or game state. Health returned successfully without starting the runtime. A cold `/serverinfo` request started Wolf and returned successfully. Docker health and configured TCP listeners became ready. Idle expiry stopped Wolf and PulseAudio cleanly with exit status zero, and gate reacquired its listeners. Expected isolation diagnostics included unavailable Docker inspection inside the socket-free runtime and unavailable mDNS multicast. No application-container launch, full UDP client exchange or real session was inferred from this check.
 
-The runtime SBOM was generated. The vulnerability gate then correctly failed on three HIGH Go-stdlib advisories in `/usr/bin/pebble`, an unowned executable bundled in the Ubuntu base, not used by Wolf's Supervisor or the application's tini entrypoint. The build now omits that unused service manager and static checks reject its return. A fresh final-image scan is required before publication. There is no blanket suppression or vulnerability exception.
+The first runtime vulnerability gate correctly failed on three HIGH Go-stdlib advisories in `/usr/bin/pebble`, an unowned executable bundled in the Ubuntu base, not used by Wolf's Supervisor or the application's tini entrypoint. The build now omits that unused service manager and static checks reject its return. All three images rebuilt after that fix, repeated their static/identity/session checks, and generated SBOMs. The Wolf runtime's HIGH/CRITICAL scan passed with no findings. Application scans each found one HIGH `CVE-2026-84782` in an inherited `openssl-provider-legacy` package, with an Ubuntu fix available. Application CI failed at the same vulnerability gate rather than publishing. The application common stage now upgrades inherited packages before installing application dependencies. This closes the gap where `apt-get install` updated required packages but left an unrelated base package stale. Application rebuild/rescan remains open. There is no blanket suppression or vulnerability exception.
 
 ## Simplification review
 
@@ -32,7 +34,7 @@ Earlier runtime checks found missing quadmath and Wayland cursor/EGL libraries a
 
 ## Current state
 
-Gate is complete and published. Wolf, Steam and Lutris images have built and passed their bounded checks described above. Security-repaired final builds/scans and complete game/session acceptance are still open. Do not infer acceptance from source delivery or isolated smoke checks. No production deployment or pairing state has been changed.
+Gate is complete and published. Wolf, Steam and Lutris images have built and passed their bounded checks described above. Wolf's security-repaired scan passed. Application inherited-package updates/rescans and complete game/session acceptance are still open. Do not infer acceptance from source delivery or isolated smoke checks. No production deployment or pairing state has been changed.
 
 The repository was initially private, where GitHub rejected required-reviewer protection. The operator subsequently authorized public visibility. The repository is now public and `intel-acceptance` has required-reviewer protection and a main-branch deployment policy. The guard was preserved rather than bypassed. This enables protected promotion but is not session acceptance or permission to promote an untested image.
 

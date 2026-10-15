@@ -2,9 +2,9 @@ name: Build candidate
 on:
   push:
     branches: [main]
-    paths-ignore: ['README.md', 'AGENTS.md', 'openspec/**']
+    paths-ignore: ['README.md', 'AGENTS.md', 'openspec/**', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'tests/test_apps.py', '.github/workflows/apps.yml', 'compose/apps.md']
   pull_request:
-    paths-ignore: ['README.md', 'AGENTS.md', 'openspec/**']
+    paths-ignore: ['README.md', 'AGENTS.md', 'openspec/**', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'tests/test_apps.py', '.github/workflows/apps.yml', 'compose/apps.md']
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
