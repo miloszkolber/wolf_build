@@ -8,7 +8,7 @@
 | Universal gate | `llama_build` | Existing `ghcr.io/miloszkolber/gate` image |
 | Deployment example | This repository | `compose/docker-compose.yaml` and `compose/.env.example` |
 | Wolf protocol, compositor and application behavior | Games on Whales upstream | Exact resolved sources, not a maintained application fork |
-| Game applications | Upstream application images | Steam/Lutris references, not images built here |
+| Steam and Lutris images | This repository | Minimal `wolf_steam` and `wolf_lutris` candidates, daily package/release updates and dependency inventories |
 | Host rollout and acceptance | Deployment owner | Local configuration, state backups and hardware evidence |
 
 The registry owner for the new runtime is configured at publication. Do not create a remote, registry package or credentials as part of planning.
@@ -35,6 +35,6 @@ These are intended files, not current implementation. Each helper requires a con
 ## Non-goals
 
 - No gate fork, SYCL inference dependencies, NVIDIA/AMD support or multiarchitecture images.
-- No custom Steam/Lutris distribution or game dependency stripping.
+- No game redistribution, custom Steam/Proton fork, Decky stack or full desktop environment. Keep required 32-bit compatibility libraries.
 - No new HTTP reverse proxy, streaming authentication layer or generic container orchestrator.
 - No promise of higher FPS, perfect tuning, bit-reproducible builds or compatibility with every future upstream release.

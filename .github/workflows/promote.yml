@@ -2,6 +2,11 @@ name: Promote accepted digest
 on:
   workflow_dispatch:
     inputs:
+      image:
+        description: Image whose exact candidate was tested in the streaming stack
+        type: choice
+        options: [wolf_runtime, wolf_steam, wolf_lutris]
+        default: wolf_runtime
       digest:
         description: Exact candidate image digest (sha256)
         type: string
@@ -13,7 +18,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: wolf-runtime-promotion
+  group: promotion-${{ inputs.image }}
   cancel-in-progress: false
 jobs:
   promote:
@@ -33,6 +38,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DIGEST: ${{ inputs.digest }}
           EVIDENCE_URL: ${{ inputs.evidence_url }}
+          IMAGE: ${{ inputs.image }}
         run: |
           gh api "repos/$GITHUB_REPOSITORY/environments/intel-acceptance" > environment.json
           python3 - <<'PY'
@@ -47,7 +53,7 @@ jobs:
           with urllib.request.urlopen(url, timeout=30) as response:
               if not response.url.startswith('https://'): raise SystemExit('insecure evidence redirect')
               record=json.loads(response.read(1048577))
-          validate(record,os.environ['DIGEST'])
+          validate(record,os.environ['DIGEST'],os.environ['IMAGE'])
           PY
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.0.0
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.1.0
@@ -59,8 +65,10 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
           DIGEST: ${{ inputs.digest }}
+          IMAGE: ${{ inputs.image }}
         run: |
-          image="ghcr.io/${OWNER,,}/wolf_runtime"
+          case "$IMAGE" in wolf_runtime|wolf_steam|wolf_lutris) ;; *) exit 1 ;; esac
+          image="ghcr.io/${OWNER,,}/$IMAGE"
           registry_digest() {
             docker buildx imagetools inspect --format '{{json .Manifest}}' "$1" | jq -er '.digest'
           }

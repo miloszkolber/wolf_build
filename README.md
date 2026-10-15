@@ -1,6 +1,6 @@
 # wolf_build
 
-Intel-only Wolf streaming runtime builds, maintained from upstream sources and started on demand by the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
+Intel-focused Wolf streaming runtime and minimal Steam/Lutris application builds, maintained from upstream sources and packages. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
 **Status: implementation and candidate verification in progress.** Gate is published and independently tested. Wolf source acquisition, Docker build, Compose and maintenance/promotion workflows are present. A working Wolf runtime image, full session acceptance and accepted `latest` must not be inferred from those files. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [actual evidence](openspec/changes/intel-wolf-runtime/evidence.md).
 
@@ -24,7 +24,7 @@ The lock resolves Wolf's `stable` branch, the latest patch in its compatible GSt
 
 Builder and runtime use Ubuntu's normal signed package repositories. Weekly cache invalidation captures package security updates without forcing a rebuild on every discovery run. The final image records distribution/build package versions and source/license inventories. Full input identity includes the packaging files, not only Wolf's upstream version. Package repositories are not frozen, so rebuilding a source lock can produce different package versions. Preserve the tested image digest for rollback, not a promise of bit-reproducible builds.
 
-Only the runtime is built here. No gate source, SYCL stack, NVIDIA CUDA/NVRTC runtime or Steam/Lutris distribution is copied into it. Intel VA/VPL, required Mesa rendering, embedded audio, input integration and supported software fallback encoders are preserved. GStreamer plugins are explicitly selected, not reduced using `ldd` alone.
+The runtime and [Steam/Lutris application images](compose/apps.md) are built separately here. No gate source, SYCL stack, NVIDIA CUDA/NVRTC runtime or application distribution is copied into the streaming runtime. Intel VA/VPL, required Mesa rendering, embedded audio, input integration and supported software fallback encoders are preserved. GStreamer plugins are explicitly selected, not reduced using `ldd` alone. Application images use their own small shared layer with amd64/i386 graphics and audio clients, not copies of upstream app Dockerfiles. Their daily workflow records dependencies and produces immutable candidates after smoke/SBOM/vulnerability checks.
 
 ## Run and accept
 

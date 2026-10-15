@@ -1,5 +1,17 @@
 # Evidence and verification status
 
+## Application-image scope correction
+
+Steam and Lutris are now explicit deliverables, not upstream-image references outside the repository. The implementation uses an independently authored common/Steam/Lutris Dockerfile on supported Ubuntu 26.04. It does not copy upstream Dockerfiles, inherit the upstream Ubuntu 25.04 base-app image, rebuild patched Xwayland/bubblewrap or import desktop, Decky, gamepad-AppImage or NVIDIA service layers. PulseAudio remains embedded in Wolf. Required i386 graphics/audio and Wine dependencies are retained rather than claiming minimality by removing game support.
+
+The application resolver successfully acquired stable Lutris 0.5.22 using its upstream-published SHA256 and resolved the supported base digest. Daily application CI records recipe/base/release/refresh identity, installed package versions, SBOM, vulnerability results and image size. Candidate publication is separated from read-only PR builds. The existing protected promotion workflow now selects the repository and rejects application evidence without a matching repository name, exact digest and complete session checks.
+
+Executed source checks after implementation: 27 Python tests, shell syntax for application scripts, 17 Markdown files with zero failures, strict OpenSpec validation (1 change) and actionlint. Resolver tests cover rejected prerelease/missing/unverified assets, all identity inputs, checksum failures preserving prior downloads and nested recipe changes. Promotion tests cover both application repositories and reject wrong-repository and incomplete controller evidence.
+
+The first Steam image built and passed payload, Intel library presence and custom/default identity checks. A separate isolated probe used real headless Sway/Xwayland with a fake Steam executable and verified X display access, Pulse environment forwarding, custom non-root identity and clean session exit. It did not launch Steam or test audio/GPU/games. The first Lutris build reached its final smoke check, where calling `lutris --version` as root attempted a GTK warning dialog without a display. The check now runs the command as the application user. Rebuild verification is pending.
+
+Payload inspection identified distinct non-Intel Vulkan libraries separate from Intel's shared Gallium/LLVM closure. The revised recipe removes those Vulkan drivers and ICDs inside the install layer, preserves both Intel ABIs and logs each omitted file. Removed the unnecessary D-Bus systemd user-session package. Final optimized image size, smoke, two-run persistence/session probes, SBOM/vulnerability publication and real Intel/game acceptance remain to be established. No production images, application config or game state were changed.
+
 ## Simplification review
 
 The earlier snapshot approach described below is superseded. Timestamped snapshot discovery changed the input hash on every run even without upstream changes, and snapshot downloads repeatedly returned HTTP 500/502. The build now uses normal signed Ubuntu repositories with the existing weekly refresh identity. Removed snapshot discovery, generated arguments, workflow plumbing and Rust-image CA bootstrapping. Retained Ubuntu because the selected source stack already compiled on it. A distro port would add unverified changes rather than remove required components. Rebuilding a lock is not package-reproducible. The tested image digest remains the rollback identity.

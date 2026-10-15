@@ -14,6 +14,19 @@ class PromotionTests(unittest.TestCase):
         record=self.record()
         self.assertTrue(promotion.validate(record,record["image_digest"]))
 
+    def test_application_acceptance_is_bound_to_repository_and_digest(self):
+        for image in ("wolf_steam", "wolf_lutris"):
+            record=self.record()
+            with self.assertRaisesRegex(ValueError,"repository"):
+                promotion.validate(record,record["image_digest"],image)
+            record["image_name"]=image
+            self.assertTrue(promotion.validate(record,record["image_digest"],image))
+            with self.assertRaisesRegex(ValueError,"repository"):
+                promotion.validate(record,record["image_digest"])
+            record["checks"]["controller"]="not-run"
+            with self.assertRaisesRegex(ValueError,"session checks"):
+                promotion.validate(record,record["image_digest"],image)
+
     def test_failed_incomplete_or_different_image_cannot_promote(self):
         for field in ("status","reviewer","tested_at","baseline_digest"):
             record=self.record(); record[field]=""

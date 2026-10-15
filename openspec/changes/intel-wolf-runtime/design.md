@@ -2,7 +2,7 @@
 
 ## Image boundary
 
-Build only `wolf_runtime` here. Consume the gate owner’s published image without copying its source. Use `linux/amd64` and a supported distribution runtime initially. Upstream Wolf already uses multi-stage builds, so the improvement is controlled runtime contents and current compatible inputs, not adding a builder stage alone.
+Build `wolf_runtime`, `wolf_steam` and `wolf_lutris` here. Consume the gate owner’s published image without copying its source. Use `linux/amd64` and a supported distribution runtime initially. Upstream Wolf already uses multi-stage builds, so the improvement is controlled runtime contents and current compatible inputs, not adding a builder stage alone.
 
 Keep upstream Wolf, `gst-wayland-display`, `gst-interpipe`, GStreamer, embedded PulseAudio and fake-udev. Preserve upstream's Supervisor/startup behavior in the first slice. The current upstream audio path is embedded, so do not introduce a separate PulseAudio image or a legacy sidecar-image update requirement.
 
@@ -29,6 +29,10 @@ Resolve once, acquire once and build from that manifest. No build stage re-queri
 Keep Ubuntu 26.04 because the selected stack compiles on it. Use its normal signed repositories with weekly package-cache invalidation, not timestamped snapshots or a CA bundle borrowed from the Rust image. Record installed packages and retain tested image digests. Changing distro would add another compatibility investigation without removing the source components Wolf requires.
 
 ## Minimal runtime contents
+
+Application-image scope is explicitly included after operator correction. Use independently authored common/Steam/Lutris stages, not copies of upstream Dockerfiles or inherited multi-vendor/EOL base-app images. Share package-managed Sway/Xwayland and amd64/i386 Intel graphics/audio-client libraries. Add only Steam's distribution installer or verified latest stable Lutris plus Wine dependencies to each target. Do not include a Pulse server, system networking/Bluetooth daemons, Decky, a custom gamepad UI, panels or terminal applications. Preserve Wolf's socket, identity, input, home and shared Lutris-library contract. Retain game compatibility and controller acceptance as separate unfinished checks. [Application image documentation](../../../compose/apps.md) owns commands and consumer details.
+
+Application builds discover base and Lutris updates daily and refresh distribution packages daily. Embed release checksums, base/recipe identity and installed package versions. Upload size, SBOM and vulnerability reports. Candidate publication is independent from promotion and rollout. The existing protected promotion workflow selects the image and requires evidence bound to both repository name and digest. User-owned Steam client/Proton updates remain runtime-managed and are not falsely recorded as immutable distribution inputs.
 
 Build and strip binaries/plugins separately from the runtime. Exclude compilers, headers, source trees and test assets. Remove NVIDIA NVRTC/CUDA paths, AMD-specific drivers and legacy i965/MediaSDK after proving no required plugin links or runtime loads depend on them. Do not build compositor CUDA features in the Intel-only target.
 

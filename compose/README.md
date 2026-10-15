@@ -19,7 +19,7 @@ Gate is read-only, non-root and device-free. Its Docker socket grants daemon aut
 
 The `/dev` bind is intentional for upstream hotplug: `runners/docker.cpp` discovers newly created `/dev/input` and `/dev/hidraw*` nodes after startup, including virtual DualSense devices. Device cgroups allow dynamic input/hidraw access while DRM access is selected explicitly. The broad bind and Docker socket make this a trusted service, not a sandbox. Removing it requires a tested alternative for dynamic devices, not simply deleting a mount.
 
-State and socket bind mounts let Wolf introspect their host paths when launching application containers. Pairing certificates, TOML and game state are runtime-owned. Steam/Lutris images remain upstream artifacts, outside this repository's build/update pipeline.
+State and socket bind mounts let Wolf introspect their host paths when launching application containers. Pairing certificates, TOML and game state are runtime-owned. [Steam/Lutris candidates](apps.md) are built and maintained here. Existing configurations are not silently migrated to them.
 
 ## Authorized rollout and recovery
 

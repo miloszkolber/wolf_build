@@ -1,9 +1,10 @@
 # Promotion acceptance record
 
-The manual promotion job consumes an operator-reviewed JSON document from an HTTPS URL. Store deployment-specific records outside this repository. The document must name the exact tested candidate and baseline digests, reviewer and test date. It is evidence supplied by a responsible tester, not proof that a JSON file itself exercised hardware.
+The manual promotion job consumes an operator-reviewed JSON document from an HTTPS URL. Store deployment-specific records outside this repository. The document must name the exact tested candidate and baseline digests, reviewer and test date. Select `wolf_runtime`, `wolf_steam` or `wolf_lutris` in the workflow. Application evidence must explicitly name the same `image_name`. All checks describe the complete streaming stack with that exact application candidate, not standalone frontend startup. It is evidence supplied by a responsible tester, not proof that a JSON file itself exercised hardware.
 
 ```json
 {
+  "image_name": "wolf_runtime",
   "image_digest": "sha256:<64 hexadecimal characters>",
   "baseline_digest": "sha256:<64 hexadecimal characters>",
   "reviewer": "responsible tester",

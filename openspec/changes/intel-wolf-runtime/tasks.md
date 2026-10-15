@@ -32,3 +32,11 @@
 - [x] 5.4 Wire trusted Intel acceptance or a recorded manual promotion gate. Required reviewers and main-branch deployment protection are configured. The CPU-only regression rejects promotion without full session checks. No untested image was promoted.
 - [ ] 5.5 Review the assembled implementation and evidence, run required checks, then sync/archive verified deltas. Do not count registry publication as host rollout.
 - [x] 5.6 Simplify the build's package acquisition and Compose configuration after review. Verify unchanged-input identity, required gate settings and source checks. Keep runtime acceptance separate.
+
+## 6. Maintained application images
+
+- [ ] 6.1 Add minimal independently authored Steam/Lutris targets on a supported base. Preserve both graphics ABIs and Wolf's identity/socket/home/input/library contracts without copying upstream desktop/Decky/NVIDIA layers.
+- [ ] 6.2 Add daily dependency/release discovery, checked Lutris acquisition, image package inventories, SBOM/vulnerability gates and immutable candidate publication. Test identity changes, failed acquisition and PR authority boundaries.
+- [x] 6.3 Extend protected same-digest promotion to application images with repository-bound evidence. Reject CPU-only or wrong-image acceptance.
+- [ ] 6.4 Build both final images and exercise static payload, custom user identity, isolated compositor/session shutdown and injected fake-udev execution. Record actual checks, not just Dockerfile syntax.
+- [ ] 6.5 Accept real Steam/Proton and Lutris native/Wine games on Intel with audio, controller/hotplug, persistence, reconnect and idle cleanup. Only then promote tested application digests.
