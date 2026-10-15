@@ -50,8 +50,11 @@ class ApplicationInputsTests(unittest.TestCase):
             (root / "scripts").mkdir()
             (root / "docker/apps.Dockerfile").write_text("FROM test")
             (root / "scripts/resolve-apps.py").write_text("resolver")
+            (root / "scripts/resolve.py").write_text("discovery")
             script = root / "docker/apps/launch.sh"
             script.write_text("first")
             first = apps.recipe_hash(root)
             script.write_text("second")
+            self.assertNotEqual(first, apps.recipe_hash(root))
+            (root / "scripts/resolve.py").write_text("changed-discovery")
             self.assertNotEqual(first, apps.recipe_hash(root))

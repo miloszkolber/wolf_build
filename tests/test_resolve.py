@@ -127,5 +127,13 @@ class ResolverTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
 
 
+    def test_runtime_packaging_ignores_application_and_docs_sources(self):
+        owned = set(resolve.RUNTIME_PACKAGING)
+        self.assertIn("docker/wolf.Dockerfile", owned)
+        self.assertIn("scripts/resolve.py", owned)
+        for app_owned in ("docker/apps.Dockerfile", "scripts/resolve-apps.py", "scripts/test-app-session.sh", "scripts/check-docs.mjs"):
+            self.assertNotIn(app_owned, owned)
+
+
 if __name__ == "__main__":
     unittest.main()

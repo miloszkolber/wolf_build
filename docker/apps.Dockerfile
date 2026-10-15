@@ -34,7 +34,9 @@ ENV APP_KIND=steam
 COPY docker/apps/ /opt/app/
 COPY .build/context/apps/manifest.json /licenses/manifest.json
 RUN chmod 755 /opt/app/*.sh && /opt/app/check.sh steam
-LABEL org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build"
+LABEL org.opencontainers.image.title="wolf_steam" \
+      org.opencontainers.image.description="Minimal Steam application image for the Intel-only Wolf runtime" \
+      org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build"
 ARG INPUT_SHA256
 LABEL io.wolf-build.input-sha256="${INPUT_SHA256}"
 CMD ["/opt/app/launch.sh"]
@@ -54,7 +56,9 @@ ENV APP_KIND=lutris
 COPY docker/apps/ /opt/app/
 COPY .build/context/apps/manifest.json /licenses/manifest.json
 RUN chmod 755 /opt/app/*.sh && /opt/app/check.sh lutris
-LABEL org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build"
+LABEL org.opencontainers.image.title="wolf_lutris" \
+      org.opencontainers.image.description="Minimal Lutris application image for the Intel-only Wolf runtime" \
+      org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build"
 ARG INPUT_SHA256
 LABEL io.wolf-build.input-sha256="${INPUT_SHA256}"
 CMD ["/opt/app/launch.sh"]

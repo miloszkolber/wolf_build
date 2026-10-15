@@ -88,7 +88,9 @@ WORKDIR /wolf
 ARG WOLF_SHA
 ARG INPUT_SHA256
 ARG RECIPE_REVISION
-LABEL org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build" \
+LABEL org.opencontainers.image.title="wolf_runtime" \
+      org.opencontainers.image.description="Intel-only Wolf streaming runtime with embedded audio and hardware encoding" \
+      org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build" \
       org.opencontainers.image.revision="${RECIPE_REVISION}" \
       io.wolf-build.wolf-revision="${WOLF_SHA}" \
       io.wolf-build.input-sha256="${INPUT_SHA256}"

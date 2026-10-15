@@ -27,7 +27,7 @@ def lutris_asset(release):
 
 def recipe_hash(root):
     digest = hashlib.sha256()
-    paths = [root / "docker/apps.Dockerfile", root / "scripts/resolve-apps.py", *sorted((root / "docker/apps").glob("*"))]
+    paths = [root / "docker/apps.Dockerfile", root / "scripts/resolve-apps.py", root / "scripts/resolve.py", *sorted((root / "docker/apps").glob("*"))]
     for path in paths:
         digest.update(str(path.relative_to(root)).encode() + b"\0" + path.read_bytes())
     return digest.hexdigest()
