@@ -26,6 +26,8 @@ Resolver output is a machine-readable manifest in `.build/`, uploaded with each 
 
 Resolve once, acquire once and build from that manifest. No build stage re-queries `latest` or clones an unrecorded HEAD. Exact source identity does not imply bit reproducibility unless every package repository and tool input is also fixed.
 
+Keep Ubuntu 26.04 because the selected stack compiles on it. Use its normal signed repositories with weekly package-cache invalidation, not timestamped snapshots or a CA bundle borrowed from the Rust image. Record installed packages and retain tested image digests. Changing distro would add another compatibility investigation without removing the source components Wolf requires.
+
 ## Minimal runtime contents
 
 Build and strip binaries/plugins separately from the runtime. Exclude compilers, headers, source trees and test assets. Remove NVIDIA NVRTC/CUDA paths, AMD-specific drivers and legacy i965/MediaSDK after proving no required plugin links or runtime loads depend on them. Do not build compositor CUDA features in the Intel-only target.
@@ -40,7 +42,7 @@ Compare image layer size, unpacked footprint, plugin/library inventories and col
 
 The shared gate gains `GATE_PROFILE=persistent-proxy|port-handoff`. Absence preserves existing inference defaults. The handoff profile requires explicit generic `GATE_RUNTIME`, `GATE_CONTAINER_NAME`, `GATE_TCP_PORTS`, `GATE_UDP_PORTS` and `GATE_ACTIVITY_PREFIXES`. It uses `GATE_HOST`, `DOCKER_SOCKET`, `IDLE_TIMEOUT`, `STARTUP_TIMEOUT` and `CONNECTION_IDLE_TIMEOUT`. No Wolf-specific runtime name, ports or prefixes are hardcoded in gate.
 
-The future Wolf `.env.example` selects `port-handoff`, host `0.0.0.0`, runtime `wolf-runtime`, gate container name `wolf`, TCP `47984,47989,48010`, UDP `47999,48100,48200`, activity prefixes `wolf-,wolf_,wolf`, idle timeout `300`, startup timeout `90` and connection idle timeout `600`. These are protocol/example defaults, not a particular host's configuration. The handoff gate must exclude itself and the runtime from activity matching.
+The Wolf Compose YAML selects `port-handoff`, host `0.0.0.0`, runtime `wolf-runtime`, gate container name `wolf`, TCP `47984,47989,48010`, UDP `47999,48100,48200`, activity prefixes `wolf-,wolf_,wolf`, idle timeout `300`, startup timeout `90` and connection idle timeout `600`. These are protocol/example defaults, not a particular host's configuration. Pin the accepted gate image and Docker socket directly in YAML. Keep only the candidate image and host-specific device/group settings in `.env`. The handoff gate must exclude itself and the runtime from activity matching.
 
 The inference example retains existing llama/Whisper environment variables and behavior. No generic backend-description language or embedded JSON environment blob is introduced merely for possible future consumers.
 
@@ -48,7 +50,7 @@ Remove the gate executable’s external JSON configuration path, `--config` flag
 
 ## Deployment boundary
 
-The example has a device-free, non-root, read-only gate on host networking and a separately created, stopped runtime under the `runtime` profile with `restart: "no"`. The runtime owns configured DRM devices, required input devices/udev, state and Docker socket access. Parameterize host paths, device paths and owning groups. Do not blindly copy a whole `/dev` mount or grant extra privileges without checking upstream's concrete application/input requirements.
+The example has a device-free, non-root, read-only gate on host networking and a separately created, stopped runtime under the `runtime` profile with `restart: "no"`. The runtime owns configured DRM devices, required input devices/udev, state and Docker socket access. Parameterize device paths and owning groups. Keep standard paths directly in YAML rather than adding variables for one-off edits. Do not blindly copy a whole `/dev` mount or grant extra privileges without checking upstream's concrete application/input requirements.
 
 Gate releases all handoff listeners before runtime start, preserves the first TCP byte stream and drops the triggering UDP datagram for client retry. Readiness uses Docker health plus the configured TCP listeners, not an inference HTTP endpoint. Idle stop is suppressed while application containers are active, and Docker activity-inspection failure must not cause unsafe shutdown. Timeout cleanup and listener reacquisition remain required.
 

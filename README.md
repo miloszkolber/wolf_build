@@ -22,13 +22,13 @@ Use `GH_TOKEN` for authenticated upstream API discovery when needed. Never put i
 
 The lock resolves Wolf's `stable` branch, the latest patch in its compatible GStreamer series, Wolf's declared compositor pin, interpipe, an Intel media/VPL stack with its declared libva/GMM/dispatcher versions, source-level CMake dependencies, the Rust toolchain digest and the Ubuntu platform digest. Build sources are acquired by full Git object identity, including pinned submodules. This is not a claim that Git archives carry upstream SHA256 signatures. Cargo's lock verifies crate inputs.
 
-Builder and runtime use the same signed Ubuntu repository snapshot recorded in the manifest. Daily snapshot advancement captures security updates. The final image records distribution/build package versions and source/license inventories. Full input identity includes the packaging files, not only Wolf's upstream version. Builds are not advertised as bit-reproducible.
+Builder and runtime use Ubuntu's normal signed package repositories. Weekly cache invalidation captures package security updates without forcing a rebuild on every discovery run. The final image records distribution/build package versions and source/license inventories. Full input identity includes the packaging files, not only Wolf's upstream version. Package repositories are not frozen, so rebuilding a source lock can produce different package versions. Preserve the tested image digest for rollback, not a promise of bit-reproducible builds.
 
 Only the runtime is built here. No gate source, SYCL stack, NVIDIA CUDA/NVRTC runtime or Steam/Lutris distribution is copied into it. Intel VA/VPL, required Mesa rendering, embedded audio, input integration and supported software fallback encoders are preserved. GStreamer plugins are explicitly selected, not reduced using `ldd` alone.
 
 ## Run and accept
 
-The [Compose example](compose/README.md) uses one environment file and a published, device-free gate. Runtime creation is separate from startup. Production rollout is not part of a build.
+The [Compose example](compose/README.md) pins the published, device-free gate directly in YAML. Its environment file contains only the candidate image and host-specific device/group settings. Runtime creation is separate from startup. Production rollout is not part of a build.
 
 An isolated Intel encode probe, without Docker authority or production state, can be run against a completed candidate:
 

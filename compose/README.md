@@ -1,10 +1,10 @@
 # Deployment example
 
-The shared gate comes from `llama_build`. This repository builds only the Wolf runtime. One `.env` supplies both containers. The earlier gate-only template is replaced by this complete example, with no JSON config, gate build context or duplicate gate implementation.
+The shared gate comes from `llama_build`. This repository builds only the Wolf runtime. Fixed names, protocol settings, the accepted gate digest, Docker socket and relative state mounts live directly in Compose. `.env` contains only the tested Wolf image and host-specific device/group settings. No JSON config, gate build context or duplicate gate implementation is needed.
 
 ## Configure and validate
 
-Copy `.env.example` to `.env`. Select accepted image digests, state/socket directories and the actual socket/render groups. Read the `hidraw` major from `/proc/devices`. The DRM device paths are examples. Keep `GATE_CONTAINER_NAME` and `GATE_RUNTIME` aligned with the deployed names and activity prefixes aligned with upstream application-container names.
+Copy `.env.example` to `.env`. Set an exact tested Wolf image digest and the actual socket/render groups. Read the `hidraw` major from `/proc/devices`. The DRM device paths are examples. Edit Compose directly for one-off changes to names, paths, gate image or timeouts. If names change, update gate's matching environment values too. Runtime image defaults supply logging, Intel driver selection and shutdown behavior without repeating them in `.env`.
 
 ```sh
 cp compose/.env.example compose/.env

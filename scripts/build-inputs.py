@@ -86,15 +86,13 @@ def main():
     cmake = "\n".join(f'set(FETCHCONTENT_SOURCE_DIR_{name} "/sources/{source}" CACHE PATH "Locked source" FORCE)' for name,source in manifest["inputs"]["cmake_sources"].items())
     (root / "locked-sources.cmake").write_text(cmake+"\n")
     base, rust = manifest["inputs"]["base"], manifest["inputs"]["toolchain"]
-    snapshot=manifest["inputs"]["distribution_snapshot"]
-    if not re.fullmatch(r"\d{8}T\d{6}Z",snapshot): raise ValueError("invalid distribution snapshot")
     # Only validated image/digest tokens are emitted as shell assignments.
     for item in (base,rust):
         if not re.fullmatch(r"[\w./:-]+",item["image"]) or not re.fullmatch(r"sha256:[a-f0-9]{64}",item["digest"]):
             raise ValueError("unlocked base/toolchain image")
     recipe=manifest["inputs"]["packaging"]["revision"]
     if not is_full_sha(recipe): raise ValueError("invalid packaging revision")
-    (root.parent / "build.env").write_text(f'BASE_IMAGE={base["image"]}@{base["digest"]}\nRUST_IMAGE={rust["image"]}@{rust["digest"]}\nCANDIDATE_TAG={manifest["candidate_tag"]}\nINPUT_SHA256={manifest["input_sha256"]}\nRECIPE_REVISION={recipe}\nWOLF_SHA={manifest["inputs"]["wolf"]["sha"]}\nSECURITY_REFRESH={manifest["inputs"]["refresh_week"]}\nUBUNTU_SNAPSHOT={snapshot}\n')
+    (root.parent / "build.env").write_text(f'BASE_IMAGE={base["image"]}@{base["digest"]}\nRUST_IMAGE={rust["image"]}@{rust["digest"]}\nCANDIDATE_TAG={manifest["candidate_tag"]}\nINPUT_SHA256={manifest["input_sha256"]}\nRECIPE_REVISION={recipe}\nWOLF_SHA={manifest["inputs"]["wolf"]["sha"]}\nSECURITY_REFRESH={manifest["inputs"]["refresh_week"]}\n')
     print("Acquired exact Git objects, not upstream-signed archive checksums.")
 
 

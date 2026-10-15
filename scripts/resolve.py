@@ -356,7 +356,6 @@ def lock_sources(manifest, compositor_override=""):
     rust_tag = rust.group(1)+"-slim-bookworm"
     inputs["toolchain"] = {"rust_version":rust.group(1), "image":f"rust:{rust_tag}", "digest":hub_digest("rust", rust_tag)}
     inputs["refresh_week"] = datetime.now(timezone.utc).strftime("%G-W%V")
-    inputs["distribution_snapshot"] = datetime.now(timezone.utc).strftime("%Y%m%dT%H0000Z")
     inputs["packaging"] = packaging_identity(Path(__file__).resolve().parents[1])
     manifest["input_hash"] = fingerprint(inputs)
     manifest["candidate_tag"] = candidate_tag(wolf_sha, manifest["input_hash"])

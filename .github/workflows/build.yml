@@ -75,7 +75,6 @@ jobs:
             echo "tag=$CANDIDATE_TAG"
             echo "input=$INPUT_SHA256"
             echo "wolf=$WOLF_SHA"
-            echo "snapshot=$UBUNTU_SNAPSHOT"
             echo "recipe=$RECIPE_REVISION"
           } >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.1.0
@@ -128,7 +127,6 @@ jobs:
             SECURITY_REFRESH=${{ steps.inputs.outputs.refresh }}
             INPUT_SHA256=${{ steps.inputs.outputs.input }}
             WOLF_SHA=${{ steps.inputs.outputs.wolf }}
-            UBUNTU_SNAPSHOT=${{ steps.inputs.outputs.snapshot }}
             RECIPE_REVISION=${{ steps.inputs.outputs.recipe }}
           cache-from: type=gha,scope=wolf
           cache-to: type=gha,scope=wolf,mode=min,ignore-error=true

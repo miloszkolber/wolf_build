@@ -31,3 +31,4 @@
 - [ ] 5.3 Implement immutable input-hash tags and candidate-to-accepted promotion of the same tested digest. Tests cover dependency-only updates, failed acceptance, conflicting tag identity and concurrent promotion.
 - [x] 5.4 Wire trusted Intel acceptance or a recorded manual promotion gate. Required reviewers and main-branch deployment protection are configured. The CPU-only regression rejects promotion without full session checks. No untested image was promoted.
 - [ ] 5.5 Review the assembled implementation and evidence, run required checks, then sync/archive verified deltas. Do not count registry publication as host rollout.
+- [x] 5.6 Simplify the build's package acquisition and Compose configuration after review. Verify unchanged-input identity, required gate settings and source checks. Keep runtime acceptance separate.

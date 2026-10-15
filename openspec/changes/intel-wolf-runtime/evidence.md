@@ -1,5 +1,15 @@
 # Evidence and verification status
 
+## Simplification review
+
+The earlier snapshot approach described below is superseded. Timestamped snapshot discovery changed the input hash on every run even without upstream changes, and snapshot downloads repeatedly returned HTTP 500/502. The build now uses normal signed Ubuntu repositories with the existing weekly refresh identity. Removed snapshot discovery, generated arguments, workflow plumbing and Rust-image CA bootstrapping. Retained Ubuntu because the selected source stack already compiled on it. A distro port would add unverified changes rather than remove required components. Rebuilding a lock is not package-reproducible. The tested image digest remains the rollback identity.
+
+Compose now pins the accepted shared gate digest, container names, protocol settings, standard Docker socket and relative state mounts directly in YAML. `.env.example` shrank from 27 to 8 lines and contains only the candidate image and device/group settings. Removed blanket `env_file` injection into both services. Image defaults supply runtime logging, Intel driver and shutdown settings. The unaccepted `latest` example is replaced by an explicit digest placeholder.
+
+Source checks after simplification passed: 22 Python tests, 15 Markdown files with zero failures, strict OpenSpec validation (1 item), actionlint and Compose configuration with the runtime profile. The lock fixture now proves different discovery days in the same week keep the identity unchanged and the next week changes it. Rendered Compose retains required handoff settings, matching gate/runtime names, device mappings and fixed socket mounts without leaking the host-selection variables into container environments.
+
+Earlier runtime checks found missing quadmath and Wayland cursor/EGL libraries after successful source compilation. Runtime packages now include those libraries, and the static checker aggregates missing dependencies instead of hiding all but the first. A completed final-image/plugin check is still required. No production deployment or session acceptance is claimed.
+
 ## Current state
 
 Gate is complete and published. Wolf implementation is present but final-image bring-up is still in progress. Do not infer runtime or session acceptance from source delivery. No production deployment or pairing state has been changed.

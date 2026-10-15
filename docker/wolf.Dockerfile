@@ -3,14 +3,11 @@ ARG BASE_IMAGE
 ARG RUST_IMAGE
 FROM ${RUST_IMAGE} AS rust
 FROM ${BASE_IMAGE} AS build
-COPY --from=rust /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 ENV DEBIAN_FRONTEND=noninteractive
 ARG SECURITY_REFRESH
-ARG UBUNTU_SNAPSHOT
-RUN test -n "$SECURITY_REFRESH" && test -n "$UBUNTU_SNAPSHOT" \
-    && sed -i "s|^URIs:.*|URIs: http://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|" /etc/apt/sources.list.d/ubuntu.sources \
-    && apt-get -o Acquire::https::CaInfo=/etc/ssl/certs/ca-certificates.crt -o APT::Update::Error-Mode=any update \
-    && apt-get -o Acquire::https::CaInfo=/etc/ssl/certs/ca-certificates.crt install -y --no-install-recommends \
+RUN test -n "$SECURITY_REFRESH" \
+    && apt-get -o APT::Update::Error-Mode=any -o Acquire::Retries=5 update \
+    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
     build-essential clang cmake ninja-build pkg-config python3 meson bison flex nasm \
     git ca-certificates autoconf automake libtool gettext curl \
     libboost-all-dev libssl-dev libcurl4-openssl-dev libunwind-dev libevdev-dev \
@@ -50,21 +47,18 @@ COPY scripts/compile-wolf.sh /compile-wolf.sh
 RUN bash /compile-wolf.sh
 
 FROM ${BASE_IMAGE} AS runtime
-COPY --from=rust /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 ENV DEBIAN_FRONTEND=noninteractive
 ARG SECURITY_REFRESH
-ARG UBUNTU_SNAPSHOT
-RUN test -n "$SECURITY_REFRESH" && test -n "$UBUNTU_SNAPSHOT" \
-    && sed -i "s|^URIs:.*|URIs: http://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|" /etc/apt/sources.list.d/ubuntu.sources \
-    && apt-get -o Acquire::https::CaInfo=/etc/ssl/certs/ca-certificates.crt -o APT::Update::Error-Mode=any update \
-    && apt-get -o Acquire::https::CaInfo=/etc/ssl/certs/ca-certificates.crt install -y --no-install-recommends \
+RUN test -n "$SECURITY_REFRESH" \
+    && apt-get -o APT::Update::Error-Mode=any -o Acquire::Retries=5 update \
+    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
     ca-certificates bash python3 supervisor pulseaudio pulseaudio-utils \
     libssl3t64 libicu78 libcurl4t64 libunwind8 libevdev2 libinput10 \
-    libxkbcommon0 libwayland-server0 libwayland-client0 libgbm1 libegl1 \
+    libxkbcommon0 libwayland-server0 libwayland-client0 libwayland-cursor0 libwayland-egl1 libgbm1 libegl1 \
     libgles2 libgl1 libopengl0 libdrm2 libpci3 libudev1 libglib2.0-0t64 \
     libopus0 libaom3 libx264-165 libx265-215 libcap2 libdw1t64 libgudev-1.0-0 \
     libx11-xcb1 libxfixes3 libxdamage1 libxrandr2 liborc-0.4-0t64 \
-    libjpeg-turbo8 libpng16-16t64 xwayland hwdata libdwarf1 \
+    libjpeg-turbo8 libpng16-16t64 xwayland hwdata libdwarf1 libquadmath0 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /opt/wolf-runtime/ /opt/wolf-runtime/
 COPY --from=build /wolf/ /wolf/

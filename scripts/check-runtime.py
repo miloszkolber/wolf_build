@@ -16,14 +16,17 @@ def static():
     manifest = json.loads(Path("/licenses/manifest.json").read_text())
     if manifest.get("version") != 2:
         raise ValueError("missing resolved input lock")
+    problems = []
     for path in [Path("/wolf/wolf"), Path("/wolf/fake-udev"), *Path("/opt/wolf-runtime/lib").rglob("*.so*")]:
         if path.is_symlink() or not path.is_file(): continue
         with path.open("rb") as binary:
             if binary.read(4) != b"\x7fELF": continue
         result=subprocess.run(["ldd",str(path)],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=30)
-        if "not found" in result.stdout: raise ValueError("missing library: "+str(path))
-        if result.returncode and not (path==Path("/wolf/fake-udev") and "not a dynamic executable" in result.stdout):
-            raise ValueError("cannot inspect library closure: "+str(path)+"\n"+result.stdout)
+        missing=[line.strip() for line in result.stdout.splitlines() if "not found" in line]
+        if missing: problems.append(str(path)+": "+"; ".join(missing))
+        elif result.returncode and not (path==Path("/wolf/fake-udev") and "not a dynamic executable" in result.stdout):
+            problems.append("cannot inspect library closure: "+str(path)+"\n"+result.stdout)
+    if problems: raise ValueError("missing libraries:\n"+"\n".join(problems))
     # Upstream intentionally links this helper statically for other app images.
     run("/wolf/fake-udev","--help")
     # Software factories are device-independent. VA and QSV factories are often
