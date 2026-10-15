@@ -19,7 +19,7 @@ RUN test -n "$SECURITY_REFRESH" && test -n "$UBUNTU_SNAPSHOT" \
     libudev-dev libglib2.0-dev libopus-dev libaom-dev libx264-dev libx265-dev \
     libcap-dev libdw-dev libgudev-1.0-dev libx11-xcb-dev libxfixes-dev \
     libxdamage-dev libxrandr-dev libxcb-dri3-dev libxcb-present-dev \
-    liborc-0.4-dev libjpeg-dev libpng-dev libdwarf-dev \
+    liborc-0.4-dev libjpeg-dev libpng-dev libdwarf-dev libicu-dev libzstd-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
