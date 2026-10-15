@@ -4,7 +4,7 @@
 set -euo pipefail
 image=${1:?image tag required}
 kind=${2:?steam or lutris required}
-case "$kind" in steam) binary=/usr/games/steam ;; lutris) binary=/usr/bin/lutris ;; *) exit 1 ;; esac
+case "$kind" in steam|lutris) binary=$kind ;; *) exit 1 ;; esac
 probe="wolf-app-probe:$$"
 container="wolf-app-probe-$$"
 volume="wolf-app-probe-$$"
@@ -36,7 +36,7 @@ ARG IMAGE
 FROM ${IMAGE}
 ARG BINARY
 COPY fake-app /tmp/fake-app
-RUN install -m 755 /tmp/fake-app "$BINARY" && rm /tmp/fake-app
+RUN install -m 755 /tmp/fake-app "$(command -v "$BINARY")" && rm /tmp/fake-app
 DOCKER
 docker build --build-arg "IMAGE=$image" --build-arg "BINARY=$binary" -t "$probe" "$temp"
 docker volume create "$volume" >/dev/null

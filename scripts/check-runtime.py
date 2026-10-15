@@ -39,7 +39,7 @@ def static():
     paths = [*Path("/opt/wolf-runtime").rglob("*"), *Path("/usr/local").rglob("*")]
     if any(any(word in p.name.lower() for word in forbidden) for p in paths):
         raise ValueError("unexpected multi-vendor payload")
-    if any(Path("/usr/bin",tool).exists() for tool in ("gcc", "g++", "clang", "cargo", "cmake")):
+    if any(Path("/usr/bin",tool).exists() for tool in ("gcc", "g++", "clang", "cargo", "cmake", "pebble")):
         raise ValueError("build tooling in runtime")
     print("Static libraries/plugins/license manifest checked; no GPU acceptance claimed.")
 

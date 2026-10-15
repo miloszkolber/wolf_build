@@ -50,6 +50,7 @@ FROM ${BASE_IMAGE} AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 ARG SECURITY_REFRESH
 RUN test -n "$SECURITY_REFRESH" \
+    && rm -f /usr/bin/pebble \
     && apt-get -o APT::Update::Error-Mode=any -o Acquire::Retries=5 update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
     ca-certificates bash python3 supervisor pulseaudio pulseaudio-utils \

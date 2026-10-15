@@ -9,12 +9,12 @@
 
 - [x] 2.1 Implement upstream discovery and a versioned input-manifest schema. Fixture tests cover unchanged/changed inputs, missing releases, prereleases, full source identity, API failure/rate limits and incompatible dependency sets.
 - [x] 2.2 Implement verified acquisition and license/provenance recording. Tests reject Git object identity mismatch, dirty cached sources and unrecorded moving refs. Source acquisition uses exact Git objects rather than pretending upstream signed archive checksums exist.
-- [ ] 2.3 Establish supported-base and Intel-stack compatibility with an exact-source build. Record resolved versions and build results, not guessed package compatibility.
+- [x] 2.3 Establish supported-base and Intel-stack compatibility with an exact-source build. Record resolved versions and build results, not guessed package compatibility.
 
 ## 3. Complete runtime candidate
 
-- [ ] 3.1 Build upstream Wolf/compositor/interpipe/media/audio/input components in separate stages and assemble a conservative runtime. Verify binary startup, shutdown/reaping, dynamic plugin closure and license inventory.
-- [ ] 3.2 Add static and plugin smoke checks for capture/postprocessing, supported hardware encoder factories, codec parsers, Opus/audio and transport elements. Missing required factories must fail CI.
+- [x] 3.1 Build upstream Wolf/compositor/interpipe/media/audio/input components in separate stages and assemble a conservative runtime. Verify binary startup, shutdown/reaping, dynamic plugin closure and license inventory.
+- [x] 3.2 Add static and plugin smoke checks for capture/postprocessing, supported hardware encoder factories, codec parsers, Opus/audio and transport elements. Missing required factories must fail CI.
 - [ ] 3.3 Remove multi-vendor/legacy/build/desktop dependency groups incrementally. Compare consistent size measurements and rerun plugin checks after each removal. Keep necessary Mesa/LLVM and supported fallback paths.
 - [ ] 3.4 Verify a candidate digest on Intel hardware against the known working baseline for advertised codecs, hardware routing, zero-copy behavior, latency, quality, audio, controls, application launch and sustained sessions.
 
@@ -35,7 +35,7 @@
 
 ## 6. Maintained application images
 
-- [ ] 6.1 Add minimal independently authored Steam/Lutris targets on a supported base. Preserve both graphics ABIs and Wolf's identity/socket/home/input/library contracts without copying upstream desktop/Decky/NVIDIA layers.
+- [x] 6.1 Add minimal independently authored Steam/Lutris targets on a supported base. Preserve both graphics ABIs and Wolf's identity/socket/home/input/library contracts without copying upstream desktop/Decky/NVIDIA layers.
 - [ ] 6.2 Add daily dependency/release discovery, checked Lutris acquisition, image package inventories, SBOM/vulnerability gates and immutable candidate publication. Test identity changes, failed acquisition and PR authority boundaries.
 - [x] 6.3 Extend protected same-digest promotion to application images with repository-bound evidence. Reject CPU-only or wrong-image acceptance.
 - [ ] 6.4 Build both final images and exercise static payload, custom user identity, isolated compositor/session shutdown and injected fake-udev execution. Record actual checks, not just Dockerfile syntax.
