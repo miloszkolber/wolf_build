@@ -20,7 +20,7 @@ Use the Intel iHD media driver, libva, VPL dispatcher/GPU runtime, matched GMM w
 | Mesa/libdrm and system libraries | Supported distribution repositories | Prefer supported package versions and security updates. Evaluate an upstream Mesa build only for a demonstrated compatibility gap. |
 | Distribution base | Official supported image | Resolve the selected tag to a platform digest. Maintenance can advance the digest, not silently change distribution release. |
 | Shared gate | `llama_build` published version/digest | Resolve an image containing the environment-only profile contract. Test the consuming boundary and retain its digest independently of Wolf. |
-| Actions | Dependabot and reviewed updates | Validate new pipeline dependencies before publication. Base/toolchain digests are resolved daily by the input owner, not duplicated as Dockerfile fallbacks. |
+| Actions | Dependabot (grouped) and reviewed updates | Pin third-party actions to SHAs with version comments, matching the sibling repositories. Validate new pipeline dependencies before publication. Base/toolchain digests are resolved daily by the input owner, not duplicated as Dockerfile fallbacks, so no docker Dependabot ecosystem applies. |
 
 Resolver output is a machine-readable manifest in `.build/`, uploaded with each build and embedded in the image's provenance/licenses directory. It records source URLs, tags/full commits, base and gate digests, package versions, compatibility constraints, checksums and checksum/signature provenance. Locally computed hashes identify bytes but are not falsely presented as upstream authenticity proofs.
 

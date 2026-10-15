@@ -4,3 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+# No docker ecosystem: docker/wolf.Dockerfile has no static FROM tags.
+# Both stages require digest-pinned build args resolved daily by scripts/resolve.py,
+# so Dependabot docker would never produce an update. Reviewed base/toolchain
+# movement arrives through the input lock, not dependency PRs.
