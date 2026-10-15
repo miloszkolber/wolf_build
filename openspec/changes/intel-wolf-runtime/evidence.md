@@ -2,6 +2,15 @@
 
 ## Application-image scope correction
 
+The complete application workflow passed on source `060dca2` (Actions run `38755980934`): both builds, bounded final-image/session checks, zero HIGH/CRITICAL findings, SBOM creation and separate publication jobs. Read-only build permissions and the default-branch/non-PR publication guard were reviewed in the workflow. Registry manifests were readable anonymously and their full input identities matched CI evidence. The published Steam digest was additionally pulled anonymously and its final-image payload check passed. The large Lutris pull timed out during layer download, so verification used the anonymous registry manifest/config plus CI's exact-image smoke evidence rather than claiming a completed local pull.
+
+| Public candidate | Published digest |
+| --- | --- |
+| `ghcr.io/miloszkolber/wolf_steam:candidate-54bdd4ad9b367169` | `sha256:d11afd56b77a55958839c52456cd2acffa88d5f518a9134c16e3b8e8731b2718` |
+| `ghcr.io/miloszkolber/wolf_lutris:candidate-54bdd4ad9b367169` | `sha256:e784dc119ed40ea0bd7cd1b269b6fadec29776ffcee109dd2548913d214cd82d` |
+
+These are unaccepted candidates, not `latest` promotions or deployment changes. Real Intel rendering, audio, controllers and game/session acceptance remain required.
+
 Steam and Lutris are now explicit deliverables, not upstream-image references outside the repository. The implementation uses an independently authored common/Steam/Lutris Dockerfile on supported Ubuntu 26.04. It does not copy upstream Dockerfiles, inherit the upstream Ubuntu 25.04 base-app image, rebuild patched Xwayland/bubblewrap or import desktop, Decky, gamepad-AppImage or NVIDIA service layers. PulseAudio remains embedded in Wolf. Required i386 graphics/audio and Wine dependencies are retained rather than claiming minimality by removing game support.
 
 The application resolver successfully acquired stable Lutris 0.5.22 using its upstream-published SHA256 and resolved the supported base digest. Daily application CI records recipe/base/release/refresh identity, installed package versions, SBOM, vulnerability results and image size. Candidate publication is separated from read-only PR builds. The existing protected promotion workflow now selects the repository and rejects application evidence without a matching repository name, exact digest and complete session checks.
@@ -20,7 +29,7 @@ The simplified runtime built successfully. A separate network-isolated final-ima
 
 The exact published gate controlled a uniquely named test runtime in a separate network namespace, with temporary container-owned state and no production ports or game state. Health returned successfully without starting the runtime. A cold `/serverinfo` request started Wolf and returned successfully. Docker health and configured TCP listeners became ready. Idle expiry stopped Wolf and PulseAudio cleanly with exit status zero, and gate reacquired its listeners. Expected isolation diagnostics included unavailable Docker inspection inside the socket-free runtime and unavailable mDNS multicast. No application-container launch, full UDP client exchange or real session was inferred from this check.
 
-The first runtime vulnerability gate correctly failed on three HIGH Go-stdlib advisories in `/usr/bin/pebble`, an unowned executable bundled in the Ubuntu base, not used by Wolf's Supervisor or the application's tini entrypoint. The build now omits that unused service manager and static checks reject its return. All three images rebuilt after that fix, repeated their static/identity/session checks, and generated SBOMs. The Wolf runtime's HIGH/CRITICAL scan passed with no findings. Application scans each found one HIGH `CVE-2026-84782` in an inherited `openssl-provider-legacy` package, with an Ubuntu fix available. Application CI failed at the same vulnerability gate rather than publishing. The application common stage now upgrades inherited packages before installing application dependencies. This closes the gap where `apt-get install` updated required packages but left an unrelated base package stale. Application rebuild/rescan remains open. There is no blanket suppression or vulnerability exception.
+The first runtime vulnerability gate correctly failed on three HIGH Go-stdlib advisories in `/usr/bin/pebble`, an unowned executable bundled in the Ubuntu base, not used by Wolf's Supervisor or the application's tini entrypoint. The build now omits that unused service manager and static checks reject its return. Application scans subsequently found one HIGH `CVE-2026-84782` in an inherited `openssl-provider-legacy` package, with an Ubuntu fix available. CI failed at the same gate rather than publishing. The application common stage now upgrades inherited packages before installing application dependencies. This closes the gap where `apt-get install` updated required packages but left an unrelated base package stale. All three final local images generated SBOMs and passed HIGH/CRITICAL scans with zero findings after the repairs. Application static, identity, fake-udev and two-run headless persistence/session checks passed again. No blanket suppression or vulnerability exception was added.
 
 ## Simplification review
 
@@ -34,7 +43,7 @@ Earlier runtime checks found missing quadmath and Wayland cursor/EGL libraries a
 
 ## Current state
 
-Gate is complete and published. Wolf, Steam and Lutris images have built and passed their bounded checks described above. Wolf's security-repaired scan passed. Application inherited-package updates/rescans and complete game/session acceptance are still open. Do not infer acceptance from source delivery or isolated smoke checks. No production deployment or pairing state has been changed.
+Gate and application candidates are published. Wolf, Steam and Lutris images have built and passed their bounded checks and local security scans described above. Runtime registry publication verification and complete game/session acceptance are still open. Do not infer acceptance from source delivery or isolated smoke checks. No production deployment or pairing state has been changed.
 
 The repository was initially private, where GitHub rejected required-reviewer protection. The operator subsequently authorized public visibility. The repository is now public and `intel-acceptance` has required-reviewer protection and a main-branch deployment policy. The guard was preserved rather than bypassed. This enables protected promotion but is not session acceptance or permission to promote an untested image.
 
@@ -62,4 +71,4 @@ These findings explain the implementation choices. The successful image, plugin,
 
 ## Unfinished acceptance
 
-Registry publication, full Moonlight sessions and accepted `latest` remain open. Session latency/quality, zero-copy behavior, real audio, controls, Steam/Lutris game integration and idle DRM release remain unverified. Hardware/deployment measurements belong outside this repository. The active change is not ready to archive.
+Runtime registry publication, full Moonlight sessions and accepted `latest` remain open. Session latency/quality, zero-copy behavior, real audio, controls, Steam/Lutris game integration and idle DRM release remain unverified. Hardware/deployment measurements belong outside this repository. The active change is not ready to archive.

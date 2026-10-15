@@ -36,7 +36,7 @@
 ## 6. Maintained application images
 
 - [x] 6.1 Add minimal independently authored Steam/Lutris targets on a supported base. Preserve both graphics ABIs and Wolf's identity/socket/home/input/library contracts without copying upstream desktop/Decky/NVIDIA layers.
-- [ ] 6.2 Add daily dependency/release discovery, checked Lutris acquisition, image package inventories, SBOM/vulnerability gates and immutable candidate publication. Test identity changes, failed acquisition and PR authority boundaries.
+- [x] 6.2 Add daily dependency/release discovery, checked Lutris acquisition, image package inventories, SBOM/vulnerability gates and immutable candidate publication. Test identity changes and failed acquisition. Review read-only PR authority and publication guards.
 - [x] 6.3 Extend protected same-digest promotion to application images with repository-bound evidence. Reject CPU-only or wrong-image acceptance.
 - [x] 6.4 Build both final images and exercise static payload, custom user identity, isolated compositor/session shutdown and injected fake-udev execution. Record actual checks, not just Dockerfile syntax.
 - [ ] 6.5 Accept real Steam/Proton and Lutris native/Wine games on Intel with audio, controller/hotplug, persistence, reconnect and idle cleanup. Only then promote tested application digests.
