@@ -23,6 +23,8 @@ All three images generated SBOMs and passed HIGH/CRITICAL scans with zero findin
 
 Source checks pass: 28 Python tests, application shell syntax, 17 Markdown files with zero failures, strict OpenSpec validation and actionlint. The lock fixture proves same-week discovery keeps identity stable while the next week changes it.
 
+Images now carry accurate OCI title/description labels instead of the inherited Ubuntu marketing text. Runtime packaging identity covers only runtime-owned files, so application-only changes no longer force runtime rebuilds; the shared discovery script is tracked in the application recipe hash instead. Local rebuilds from cache passed static checks with the corrected labels, and the Intel probe passed all three codecs. Registry publication of the relabeled candidates is pending in CI.
+
 ## Open acceptance
 
 Runtime registry publication, full Moonlight sessions and accepted `latest` remain open. Session latency/quality, zero-copy behavior, real audio, controls, Steam/Lutris game integration and idle DRM release remain unverified. Hardware/deployment measurements belong outside this repository. The active change is not ready to archive.
