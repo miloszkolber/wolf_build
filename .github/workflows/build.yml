@@ -137,13 +137,13 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --format cyclonedx --output /work/candidate.cdx.json
           docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --severity HIGH,CRITICAL --exit-code 1 --format json --output /work/vulnerabilities.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && steps.existing.outputs.unchanged != 'true'
         with:
           name: publication-image
           path: candidate.tar
           retention-days: 2
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: candidate-evidence
