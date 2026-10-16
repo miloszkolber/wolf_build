@@ -83,3 +83,5 @@ Protected promotion rechecks exact-image payload/vulnerability gates and stages 
 ## Open acceptance
 
 Real Steam/Proton and Lutris native/Wine games, audio, controls/hotplug, latency/quality, zero-copy, reconnect, sustained sessions and idle DRM release remain operator acceptance items. The active change stays open until those results exist. No full acceptance or archive is claimed.
+
+The hosted apps workflow first published the real migration candidates (Steam `candidate-f1ae484293a92d94` as `sha256:e7cc1151563805c5f7c47f9eff0f267b7ba91b045ab8f693094f807bd2b20d11`, Heroic `candidate-1e539bd0c1cfad74` as `sha256:7da6e68ff0ed305fa9889dc0b6298b8f8dbfc1d2cecb7b6e29b42d88957e71b1`) with candidate/latest digests equal. A manual unchanged-dispatch run (38963702434) then resolved identical inputs, skipped the docker build step for both applications, repeated scans and republished the identical digests. Remaining: hosted runtime publication plus an unchanged runtime dispatch.
