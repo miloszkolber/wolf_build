@@ -8,7 +8,8 @@ if [ "$1" = gstreamer ]; then
         -Dbase=enabled -Dgood=enabled -Dbad=enabled -Dugly=enabled -Dgpl=enabled \
         -Dtools=enabled -Dorc=enabled \
         -Dgst-plugins-base:app=enabled -Dgst-plugins-base:audioconvert=enabled \
-        -Dgst-plugins-base:audioresample=enabled -Dgst-plugins-base:opus=enabled \
+        -Dgst-plugins-base:audioresample=enabled -Dgst-plugins-base:audiorate=enabled \
+        -Dgst-plugins-base:opus=enabled \
         -Dgst-plugins-base:videoconvertscale=enabled -Dgst-plugins-base:videotestsrc=enabled \
         -Dgst-plugins-base:audiotestsrc=enabled \
         -Dgst-plugins-base:gl=enabled -Dgst-plugins-base:gl_winsys=wayland,egl,gbm,surfaceless \

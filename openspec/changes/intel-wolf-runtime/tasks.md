@@ -56,3 +56,9 @@
 - [x] 8.3 Fetch full runtime Git history and reject shallow provenance. Remove the independent gate from runtime discovery/identity and unused build-variable dependencies. Keep compiler-stage caches.
 - [x] 8.4 Remove the manual promotion workflow and update release/acceptance documentation and prepared maintenance prompt without adding a second policy owner.
 - [x] 8.5 Verify local checks, observe both CI pipelines to completion and confirm each latest digest equals its checked immutable image. Verify a repeated unchanged run reuses the image and retains latest. Unit-test stale/missing latest repair. Do not redeploy host services in this build-process task.
+
+## 9. Live launch compatibility
+
+- [ ] 9.1 Restore the audiorate plugin required by Wolf's default audio pipeline. Add a device-independent conversion/Opus pipeline check and verify the final image.
+- [ ] 9.2 Capture short-lived application exit logs from an actual Wolf launch, repair the evidenced application integration failure and verify the same launch boundary.
+- [ ] 9.3 Publish and deploy checked fixes without changing pairing/game state. Keep real game/session acceptance separate from process startup.

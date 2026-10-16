@@ -31,10 +31,18 @@ def static():
     run("/wolf/fake-udev","--help")
     # Software factories are device-independent. VA and QSV factories are often
     # registered only after driver/device probing, so require their plugins here.
-    for element in ("appsrc", "appsink", "videoconvert", "videoscale", "audioconvert", "audioresample", "opusenc", "opusdec", "pulsesrc", "udpsink", "rtph264pay", "h264parse", "h265parse", "av1parse", "x264enc", "x265enc", "av1enc", "interpipesrc", "interpipesink", "waylanddisplaysrc"):
+    for element in ("appsrc", "appsink", "videoconvert", "videoscale", "audioconvert", "audiorate", "audioresample", "opusenc", "opusdec", "pulsesrc", "udpsink", "rtph264pay", "h264parse", "h265parse", "av1parse", "x264enc", "x265enc", "av1enc", "interpipesrc", "interpipesink", "waylanddisplaysrc"):
         run("gst-inspect-1.0",element)
     for plugin in ("va", "qsv"):
         run("gst-inspect-1.0",plugin)
+    # Exercise Wolf's default audio conversion/encoding chain, not just isolated
+    # factories. The synthetic source/sink require no sound server or devices.
+    run("gst-launch-1.0", "-q", "audiotestsrc", "num-buffers=8", "!",
+        "audio/x-raw,rate=48000,channels=2", "!", "queue", "max-size-buffers=3",
+        "leaky=downstream", "!", "audiorate", "!", "audioconvert", "!",
+        "opusenc", "bitrate=96000", "bitrate-type=cbr", "frame-size=5",
+        "bandwidth=fullband", "audio-type=restricted-lowdelay", "max-payload-size=1400",
+        "!", "fakesink")
     forbidden = ("nvrtc", "nvidia", "nouveau", "radeonsi", "i965_drv_video")
     paths = [*Path("/opt/wolf-runtime").rglob("*"), *Path("/usr/local").rglob("*")]
     if any(any(word in p.name.lower() for word in forbidden) for p in paths):
