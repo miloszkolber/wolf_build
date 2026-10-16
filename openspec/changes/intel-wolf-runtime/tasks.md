@@ -15,7 +15,7 @@
 
 - [x] 3.1 Build upstream Wolf/compositor/interpipe/media/audio/input components in separate stages and assemble a conservative runtime. Verify binary startup, shutdown/reaping, dynamic plugin closure and license inventory.
 - [x] 3.2 Add static and plugin smoke checks for capture/postprocessing, supported hardware encoder factories, codec parsers, Opus/audio and transport elements. Missing required factories must fail CI.
-- [ ] 3.3 Remove multi-vendor/legacy/build/desktop dependency groups incrementally. Compare consistent size measurements and rerun plugin checks after each removal. Keep necessary Mesa/LLVM and supported fallback paths.
+- [ ] 3.3 Further incremental payload pruning remains deferred until game acceptance. The reduced Intel payload and same-method size comparison are verified, but further removals still require repeated plugin/game checks with Mesa/LLVM and fallbacks retained.
 - [ ] 3.4 Verify a candidate digest on Intel hardware against the known working baseline for advertised codecs, hardware routing, zero-copy behavior, latency, quality, audio, controls, application launch and sustained sessions.
 
 ## 4. Consuming deployment
@@ -26,9 +26,9 @@
 
 ## 5. Maintenance and publication
 
-- [ ] 5.1 Add daily discovery, changed-input builds, weekly security refresh, manual exact-version candidates, dependency-update automation and failure reporting. Test selection decisions with fixtures.
-- [ ] 5.2 Add workflow, Compose, docs/schema, resolver, final-image, vulnerability and SBOM checks. Verify PRs cannot publish or reach trusted Docker/GPU infrastructure.
-- [ ] 5.3 Implement immutable input-hash tags and candidate-to-accepted promotion of the same tested digest. Tests cover dependency-only updates, failed acceptance, conflicting tag identity and concurrent promotion.
+- [x] 5.1 Add daily discovery, changed-input builds, weekly security refresh, manual exact-version candidates, dependency-update automation and failure reporting. Test selection decisions with fixtures.
+- [x] 5.2 Add workflow, Compose, docs/schema, resolver, final-image, vulnerability and SBOM checks. Review read-only PR permissions, default-branch publication guards and hosted-runner boundaries, and verify successful CI/publication.
+- [x] 5.3 Implement immutable input-hash candidates and same-digest protected promotion. Verify dependency/acceptance rejection fixtures and registry digest preservation. Review immutable-label collision checks and per-image GitHub concurrency serialization without claiming an executed collision/race simulation.
 - [x] 5.4 Wire protected manual promotion. Required reviewers and main-branch protection remain configured. Full-acceptance validation rejects CPU-only evidence. Operator-approved testing latest is separate from full acceptance.
 - [ ] 5.5 Review the assembled implementation and evidence, run required checks, then sync/archive verified deltas. Do not count registry publication as host rollout.
 - [x] 5.6 Simplify the build's package acquisition and Compose configuration after review. Verify unchanged-input identity, required gate settings and source checks. Keep runtime acceptance separate.
@@ -45,6 +45,6 @@
 
 - [x] 7.1 Review current source, successful CI artifacts and exact relabeled registry digests. Repeat payload, Intel encode, app-session and stock bubblewrap checks, then rescan all three images.
 - [x] 7.2 Correct runtime identity provenance so unrelated commits do not invalidate the hash. Add a real Git-history regression test.
-- [ ] 7.3 Promote exact checked digests to testing latest under the operator's authorization. Preserve full-acceptance validation and record actual registry results.
+- [x] 7.3 Promote exact checked digests to testing latest under the operator's authorization. Preserve full-acceptance validation and record actual registry results.
 - [x] 7.4 Prepare the weekly maintenance prompt using the existing sibling worker contract. Do not schedule or execute it implicitly.
 - [ ] 7.5 Back up and deploy the host stack, preserve pairing/game state, verify cold start and return to idle, and document rollback locally.

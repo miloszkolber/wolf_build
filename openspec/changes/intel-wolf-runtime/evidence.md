@@ -12,13 +12,15 @@ Runtime workflow `38761490730` and application workflow `38761491024` passed on 
 | `ghcr.io/miloszkolber/wolf_steam:candidate-608f13424ac4e74b` | `sha256:cc58141eaf61ea8cdd1f53a5b36d35dda8316e469d99db064175493c826880ec` |
 | `ghcr.io/miloszkolber/wolf_lutris:candidate-608f13424ac4e74b` | `sha256:cfcb07628f3034624d292450c3356911a256c1d6b4a8d42aa2663976f4f84cd1` |
 
+Protected testing-latest promotions passed in runs `38830203743` (runtime), `38830206139` (Steam) and `38830208653` (Lutris), after explicit operator authorization and environment approval. All three `latest` manifests match the exact digests above. Payload and HIGH/CRITICAL gates were rerun by the promotion jobs. No full-acceptance evidence was fabricated.
+
 The shared gate remains `816b5f152e99` at `sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40`, owned and verified in `llama_build`.
 
 ## Executed checks
 
 Runtime library/plugin/license checks and isolated Intel H.264, HEVC and AV1 encoding passed. Isolated gate/runtime checks passed health-without-wake, cold `/serverinfo`, readiness, idle stop and clean Wolf/Pulse exit. The authorized deployment also passed cold startup and preserved pairing records. This is not proof of complete streaming quality or zero-copy behavior.
 
-Both application images passed Intel library closure for amd64/i386, default/custom UID handling, rejected root-like IDs, real headless Sway/Xwayland fake-app sessions, two-run persistence, clean exit and injected fake-udev execution. The actual Lutris version command works with a disposable HOME. Stock bubblewrap user namespaces passed without SYS_ADMIN. Real applications/games, hardware rendering, sound and controllers still require the operator's session tests.
+Both application images passed Intel library closure for amd64/i386, default/custom UID handling, rejected root-like IDs, real headless Sway/Xwayland fake-app sessions, two-run persistence, clean exit and injected fake-udev execution. The actual Lutris version command works with a disposable HOME. Stock bubblewrap user namespaces passed without SYS_ADMIN. A real Lutris frontend stayed running in an isolated probe, and Intel Vulkan device discovery passed. The offline Steam-state clone probe stopped at its expected network bootstrap; normal-network access to the verified installer URL passed. Actual Steam/game rendering, sound, controllers and complete streaming still require the operator's session tests.
 
 Trimming excludes build/desktop/NVIDIA layers and separate non-Intel Vulkan drivers while retaining Intel's shared Gallium/LLVM and both graphics/audio ABIs. Gates exposed and repaired the unused vulnerable base `pebble` binary and a stale inherited OpenSSL provider. All reviewed images now scan clean without exceptions. Explicit pciutils/protobuf dependencies retain Lutris GPU detection and Battle.net support.
 
