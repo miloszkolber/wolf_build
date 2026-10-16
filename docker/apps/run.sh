@@ -9,16 +9,9 @@ steam)
     read -r -a flags <<< "${STEAM_STARTUP_FLAGS:--bigpicture}"
     steam "${flags[@]}"
     ;;
-lutris)
-    mkdir -p /var/lutris/{Games,library,share} "$HOME/.config/lutris" "$HOME/.local/share"
-    for mapping in '.config/lutris/games:library' '.local/share/lutris:share'; do
-        target="$HOME/${mapping%%:*}"
-        if [ ! -e "$target" ] && [ ! -L "$target" ]; then ln -s "/var/lutris/${mapping##*:}" "$target"; fi
-    done
-    if [ ! -e "$HOME/.config/lutris/system.yml" ]; then
-        printf 'system:\n  game_path: /var/lutris/Games\n' > "$HOME/.config/lutris/system.yml"
-    fi
-    lutris
+heroic)
+    # Heroic manages GOG acquisition and its own GE-Proton/UMU runners.
+    heroic --console --fullscreen
     ;;
 *) echo 'Unsupported application' >&2; exit 1 ;;
 esac

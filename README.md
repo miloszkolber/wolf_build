@@ -1,6 +1,6 @@
 # wolf_build
 
-Intel-focused Wolf streaming runtime and minimal Steam/Lutris application builds, maintained from upstream sources and packages. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
+Intel-focused Wolf streaming runtime and minimal Steam/Heroic application builds, maintained from upstream sources and packages. Heroic starts in Console Mode for GOG-first TV use. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
 **Status: ready for operator game/session acceptance.** Every successful default-channel build publishes an immutable input-hash tag and advances `latest` to that same checked digest. CI, payload/session probes and HIGH/CRITICAL scans are required. Intel H.264/HEVC/AV1 probes passed, but full game/session acceptance remains separate. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [evidence](openspec/changes/intel-wolf-runtime/evidence.md).
 
@@ -24,7 +24,7 @@ The lock resolves Wolf's `stable` branch, the latest patch in its compatible GSt
 
 Builder and runtime use Ubuntu's normal signed package repositories. Weekly cache invalidation captures package security updates without forcing a rebuild on every discovery run. The final image records distribution/build package versions and source/license inventories. Full input identity includes the packaging files, not only Wolf's upstream version. Package repositories are not frozen, so rebuilding a source lock can produce different package versions. Preserve the tested image digest for rollback, not a promise of bit-reproducible builds.
 
-The runtime and [Steam/Lutris application images](compose/apps.md) are built separately here. No gate source, SYCL stack, NVIDIA CUDA/NVRTC runtime or application distribution is copied into the streaming runtime. Intel VA/VPL, required Mesa rendering, embedded audio, input integration and supported software fallback encoders are preserved. GStreamer plugins are explicitly selected, not reduced using `ldd` alone. Application images use their own small shared layer with amd64/i386 graphics and audio clients, not copies of upstream app Dockerfiles. Their daily workflow records dependencies and produces immutable candidates after smoke/SBOM/vulnerability checks.
+The runtime and [Steam/Heroic application images](compose/apps.md) are built separately here. No gate source, SYCL stack, NVIDIA CUDA/NVRTC runtime or application distribution is copied into the streaming runtime. Intel VA/VPL, required Mesa rendering, embedded audio, input integration and supported software fallback encoders are preserved. GStreamer plugins are explicitly selected, not reduced using `ldd` alone. Application images use their own small shared layer with amd64/i386 graphics and audio clients, not copies of upstream app Dockerfiles. Their daily workflow records dependencies and produces immutable candidates after smoke/SBOM/vulnerability checks. Lutris builds are retired.
 
 ## Run and accept
 

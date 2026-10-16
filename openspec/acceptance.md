@@ -6,7 +6,7 @@ Default-channel builds automatically publish checked images to an immutable inpu
 
 ## Full acceptance
 
-Store deployment-specific acceptance records outside this repository. Each record must name the exact tested image and baseline digests, image name, reviewer and test date. Validate it with `python3 scripts/promotion.py evidence.json sha256:<digest> --image wolf_runtime` (or `wolf_steam`/`wolf_lutris`). All checks describe the complete streaming stack with that exact candidate, not standalone frontend startup. This validates a responsible tester's record, not proof that JSON itself exercised hardware.
+Store deployment-specific acceptance records outside this repository. Each record must name the exact tested image and baseline digests, image name, reviewer and test date. Validate it with `python3 scripts/promotion.py evidence.json sha256:<digest> --image wolf_runtime` (or `wolf_steam`/`wolf_heroic`). All checks describe the complete streaming stack with that exact candidate, not standalone frontend startup. This validates a responsible tester's record, not proof that JSON itself exercised hardware.
 
 ```json
 {
@@ -24,7 +24,7 @@ Store deployment-specific acceptance records outside this repository. Each recor
     "audio": "pass",
     "keyboard_mouse": "pass",
     "controller": "pass",
-    "steam_lutris": "pass",
+    "steam_heroic": "pass",
     "sustained_stream": "pass",
     "latency_quality": "pass",
     "idle_stop": "pass",

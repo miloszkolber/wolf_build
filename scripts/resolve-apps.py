@@ -1,4 +1,4 @@
-"""Resolve the application base and Lutris release before Docker assembly."""
+"""Resolve the application base and Heroic release before Docker assembly."""
 import argparse
 import hashlib
 import json
@@ -9,19 +9,19 @@ from urllib.request import Request, urlopen
 from resolve import BASE_IMAGE, discover_base_digest, github_api
 
 
-def lutris_asset(release):
+def heroic_asset(release):
     tag = release.get("tag_name", "")
     import re
     if release.get("draft") or release.get("prerelease") or not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
-        raise ValueError("Lutris must be a stable release")
-    name = f"lutris_{tag[1:]}_all.deb"
+        raise ValueError("Heroic must be a stable release")
+    name = f"Heroic-{tag[1:]}-linux-amd64.deb"
     assets = [a for a in release["assets"] if a["name"] == name]
     if len(assets) != 1:
-        raise ValueError("missing unambiguous Lutris deb")
+        raise ValueError("missing unambiguous Heroic deb")
     asset = assets[0]
-    url = f"https://github.com/lutris/lutris/releases/download/{tag}/{name}"
+    url = f"https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/{tag}/{name}"
     if asset["browser_download_url"] != url or not re.fullmatch(r"sha256:[a-f0-9]{64}", asset.get("digest", "")):
-        raise ValueError("Lutris asset lacks a verified release identity")
+        raise ValueError("Heroic asset lacks a verified release identity")
     return {"version": tag[1:], "url": url, "sha256": asset["digest"][7:]}
 
 
@@ -46,7 +46,7 @@ def download(asset, target):
                 digest.update(chunk)
                 output.write(chunk)
         if digest.hexdigest() != asset["sha256"]:
-            raise ValueError("Lutris asset checksum mismatch")
+            raise ValueError("Heroic asset checksum mismatch")
         temporary.replace(target)
     finally:
         temporary.unlink(missing_ok=True)
@@ -59,14 +59,14 @@ def main():
     root = Path(__file__).resolve().parents[1]
     inputs = {
         "base": BASE_IMAGE + "@" + discover_base_digest(),
-        "lutris": lutris_asset(github_api("repos/lutris/lutris/releases/latest")),
+        "heroic": heroic_asset(github_api("repos/Heroic-Games-Launcher/HeroicGamesLauncher/releases/latest")),
         "refresh": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "recipe_sha256": recipe_hash(root),
         "steam": "Ubuntu steam-installer; Valve client updates per-user at launch",
     }
     args.output.mkdir(parents=True, exist_ok=True)
-    download(inputs["lutris"], args.output / "lutris.deb")
-    (args.output / "lutris.sha256").write_text(inputs["lutris"]["sha256"] + "  lutris.deb\n")
+    download(inputs["heroic"], args.output / "heroic.deb")
+    (args.output / "heroic.sha256").write_text(inputs["heroic"]["sha256"] + "  heroic.deb\n")
     digest = identity(inputs)
     manifest = {"version": 1, "inputs": inputs, "input_sha256": digest, "tag": "candidate-" + digest[:16]}
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

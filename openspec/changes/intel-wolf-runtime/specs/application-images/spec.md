@@ -2,11 +2,11 @@
 
 ### Requirement: Minimal maintained application images
 
-The repository SHALL build Steam and Lutris application images independently of the streaming runtime, using a supported distribution, required amd64/i386 Intel graphics and audio client libraries, and no copied upstream desktop or multi-vendor application layer.
+The repository SHALL build Steam and Heroic application images independently of the streaming runtime, using a supported distribution, required amd64/i386 Intel graphics and audio client libraries, and no copied upstream desktop or multi-vendor application layer. Heroic SHALL replace the retired Lutris build and default to Console Mode for GOG-first TV use.
 
 #### Scenario: Application assembly
-- **WHEN** a Steam or Lutris image is built
-- **THEN** the image preserves Wolf's per-user home, identity, display/audio sockets, input and shared Lutris-library interfaces
+- **WHEN** a Steam or Heroic image is built
+- **THEN** the image preserves Wolf's per-user home, identity, display/audio sockets and input interfaces
 - **AND** it excludes a separate PulseAudio server, NVIDIA integration, Decky and full desktop applications
 - **AND** actual Intel/game compatibility remains a separate acceptance boundary
 
@@ -16,9 +16,14 @@ Application builds SHALL evaluate base, application and package dependencies dai
 
 #### Scenario: Upstream or package update
 - **WHEN** daily discovery or a source change triggers application assembly
-- **THEN** the candidate resolves the supported base digest and stable Lutris release asset with a checked upstream SHA256, and refreshes signed distribution packages
+- **THEN** the candidate resolves the supported base digest and stable Heroic release asset with a checked upstream SHA256, and refreshes signed distribution packages
 - **AND** the candidate includes recipe identity, package inventory, SBOM and vulnerability results
 - **AND** Steam client, Proton and game downloads in user state are distinguished from immutable image dependencies
+
+#### Scenario: Heroic TV launch
+- **WHEN** Wolf launches the Heroic application
+- **THEN** it starts fullscreen Console Mode as the configured non-root user with a writable persistent home and working nested Wayland socket access
+- **AND** retired Lutris games and configuration are not deleted or silently reinterpreted as Heroic state
 
 #### Scenario: Failed or untrusted build
 - **WHEN** acquisition, smoke or vulnerability checks fail, or a pull request runs

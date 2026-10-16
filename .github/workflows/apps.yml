@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [steam, lutris]
+        app: [steam, heroic]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -79,9 +79,6 @@ jobs:
           docker run --rm --network none --entrypoint /opt/app/check.sh app-test:local "$APP"
           test "$(docker run --rm --network none -e PUID=1234 -e PGID=1235 app-test:local id -u)" = 1234
           if docker run --rm --network none -e PUID=00 app-test:local id -u; then exit 1; fi
-          if [ "$APP" = lutris ]; then
-            docker run --rm --network none -e PUID=1234 -e PGID=1235 app-test:local lutris --version
-          fi
           docker run --rm --network none app-test:local sh -ec 'test "$HOME" = /home/retro; test -w "$HOME"; test "$(id -u)" = 1000'
           bash scripts/test-app-session.sh app-test:local "$APP"
           docker image inspect app-test:local --format '{{.Size}}' > image-size.txt
@@ -125,7 +122,7 @@ jobs:
       actions: read
     strategy:
       matrix:
-        app: [steam, lutris]
+        app: [steam, heroic]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -22,7 +22,7 @@ def gh(path):
 
 
 def image_name(name):
-    if name not in ("wolf_runtime", "wolf_steam", "wolf_lutris"):
+    if name not in ("wolf_runtime", "wolf_steam", "wolf_heroic"):
         raise ValueError("unknown image")
     owner = os.environ["GITHUB_REPOSITORY_OWNER"].lower()
     if not re.fullmatch(r"[a-z0-9-]+", owner):
@@ -150,7 +150,7 @@ def publish(name, tag, identity, local, latest=True):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("check", "publish"))
-    parser.add_argument("image", choices=("wolf_runtime", "wolf_steam", "wolf_lutris"))
+    parser.add_argument("image", choices=("wolf_runtime", "wolf_steam", "wolf_heroic"))
     parser.add_argument("tag")
     parser.add_argument("identity")
     parser.add_argument("local")

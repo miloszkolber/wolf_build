@@ -2,7 +2,7 @@
 
 ## Image boundary
 
-Build `wolf_runtime`, `wolf_steam` and `wolf_lutris` here. Consume the gate owner’s published image without copying its source. Use `linux/amd64` and a supported distribution runtime initially. Upstream Wolf already uses multi-stage builds, so the improvement is controlled runtime contents and current compatible inputs, not adding a builder stage alone.
+Build `wolf_runtime`, `wolf_steam` and `wolf_heroic` here. Lutris is retired in favor of Heroic Console Mode for GOG-first TV use. Consume the gate owner’s published image without copying its source. Use `linux/amd64` and a supported distribution runtime initially. Upstream Wolf already uses multi-stage builds, so the improvement is controlled runtime contents and current compatible inputs, not adding a builder stage alone.
 
 Keep upstream Wolf, `gst-wayland-display`, `gst-interpipe`, GStreamer, embedded PulseAudio and fake-udev. Preserve upstream's Supervisor/startup behavior in the first slice. The current upstream audio path is embedded, so do not introduce a separate PulseAudio image or a legacy sidecar-image update requirement.
 
@@ -30,9 +30,9 @@ Keep Ubuntu 26.04 because the selected stack compiles on it. Use its normal sign
 
 ## Minimal runtime contents
 
-Application-image scope is explicitly included after operator correction. Use independently authored common/Steam/Lutris stages, not copies of upstream Dockerfiles or inherited multi-vendor/EOL base-app images. Share package-managed Sway/Xwayland and amd64/i386 Intel graphics/audio-client libraries. Add only Steam's distribution installer or verified latest stable Lutris plus Wine dependencies to each target. Do not include a Pulse server, system networking/Bluetooth daemons, Decky, a custom gamepad UI, panels or terminal applications. Preserve Wolf's socket, identity, input, home and shared Lutris-library contract. Retain game compatibility and controller acceptance as separate unfinished checks. [Application image documentation](../../../compose/apps.md) owns commands and consumer details.
+Use independently authored common/Steam/Heroic stages, not copies of upstream Dockerfiles or inherited multi-vendor/EOL layers. Share Sway/Xwayland and both graphics/audio ABIs. Steam installs its distribution installer and a private system bus/NetworkManager for the evidenced Big Picture status API. Drop network-changing capabilities for that daemon and preserve Docker addresses/DNS. Heroic installs its verified upstream deb and manages GOG/Proton downloads in user state. Do not include a Pulse server, Bluetooth daemon, Decky, panels or terminals. Preserve Wolf's socket, identity, input and home contracts, transfer only the session Wayland socket and hide the idle/typing cursor. Preserve retired libraries as data rather than interpreting Lutris prefixes as Heroic configuration. [Application documentation](../../../compose/apps.md) owns commands and consumer details.
 
-Application builds discover base/Lutris updates and refresh packages daily. Embed release checksums, recipe identity and installed packages. Reuse unchanged images but rerun checks, then publish the immutable tag and same digest as latest. There is no manual promotion step. Steam client/Proton updates in user state are not immutable image inputs.
+Application builds discover base/Heroic updates and refresh packages daily. Embed release checksums, recipe identity and installed packages. Reuse unchanged images but rerun checks, then publish the immutable tag and same digest as latest. There is no manual promotion step. Steam client, Heroic-managed Proton and games in user state are not immutable image inputs.
 
 Build and strip binaries/plugins separately from the runtime. Exclude compilers, headers, source trees and test assets. Remove NVIDIA NVRTC/CUDA paths, AMD-specific drivers and legacy i965/MediaSDK after proving no required plugin links or runtime loads depend on them. Do not build compositor CUDA features in the Intel-only target.
 
@@ -74,7 +74,7 @@ Immutable input-hash tags retain rollback identity and are never overwritten. La
 
 CI without an Intel GPU can establish binary startup, plugin availability, dynamic-link closure and configuration correctness. It cannot establish hardware encoding, zero-copy correctness or Moonlight session fidelity. Test the exact candidate digest on the intended Intel device, with a known working baseline and consistent settings.
 
-Require H.264, HEVC and AV1 where the target advertises support, cold TCP/UDP start, pairing/reconnection, audio, keyboard/mouse/controller events, Steam/Lutris launch, sustained streaming, game-process exit, idle stop and DRM release. Compare frame/encoding latency, dropped frames, quality, CPU/GPU use and cold-start latency with recorded baseline tolerances. Do not hide software fallback as successful hardware encoding. Unsupported hardware features are explicitly marked not applicable with capability evidence.
+Require H.264, HEVC and AV1 where the target advertises support, cold TCP/UDP start, pairing/reconnection, audio, keyboard/mouse/controller events, Steam/Heroic launch, sustained streaming, game-process exit, idle stop and DRM release. Compare frame/encoding latency, dropped frames, quality, CPU/GPU use and cold-start latency with recorded baseline tolerances. Do not hide software fallback as successful hardware encoding. Unsupported hardware features are explicitly marked not applicable with capability evidence.
 
 Before authorized rollout, stop sessions and back up Wolf configuration, pairing state and application state consistently. Retain prior runtime and gate digests plus prior deployment settings. Test candidate state migration separately where upstream changes schemas. Image rollback alone does not undo state migrations. A gate restart's existing runtime-stop behavior must be documented so upgrade cannot unexpectedly interrupt a session.
 

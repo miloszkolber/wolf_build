@@ -13,21 +13,21 @@ spec.loader.exec_module(apps)
 
 
 def release():
-    return {"tag_name": "v0.5.22", "assets": [{"name": "lutris_0.5.22_all.deb", "browser_download_url": "https://github.com/lutris/lutris/releases/download/v0.5.22/lutris_0.5.22_all.deb", "digest": "sha256:" + "a" * 64}]}
+    return {"tag_name": "v2.22.4", "assets": [{"name": "Heroic-2.22.4-linux-amd64.deb", "browser_download_url": "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v2.22.4/Heroic-2.22.4-linux-amd64.deb", "digest": "sha256:" + "a" * 64}]}
 
 
 class ApplicationInputsTests(unittest.TestCase):
     def test_stable_release_requires_exact_asset_and_digest(self):
-        self.assertEqual(apps.lutris_asset(release())["version"], "0.5.22")
+        self.assertEqual(apps.heroic_asset(release())["version"], "2.22.4")
         for change in ({"prerelease": True}, {"draft": True}, {"tag_name": "latest"}, {"assets": []}):
             value = release(); value.update(change)
-            with self.assertRaises(ValueError): apps.lutris_asset(value)
-        for field, value in (("digest", ""), ("browser_download_url", "https://attacker.invalid/lutris.deb")):
+            with self.assertRaises(ValueError): apps.heroic_asset(value)
+        for field, value in (("digest", ""), ("browser_download_url", "https://attacker.invalid/heroic.deb")):
             item = release(); item["assets"][0][field] = value
-            with self.assertRaises(ValueError): apps.lutris_asset(item)
+            with self.assertRaises(ValueError): apps.heroic_asset(item)
 
     def test_base_release_recipe_and_refresh_change_identity(self):
-        original = {"base": "a", "lutris": "0.5.22", "recipe": "a", "refresh": "2026-10-15"}
+        original = {"base": "a", "heroic": "2.22.4", "recipe": "a", "refresh": "2026-10-15"}
         self.assertEqual(apps.identity(original), apps.identity(dict(reversed(list(original.items())))))
         for key in original:
             changed = dict(original); changed[key] += "-changed"
@@ -35,7 +35,7 @@ class ApplicationInputsTests(unittest.TestCase):
 
     def test_download_checksum_failure_never_replaces_existing_asset(self):
         with tempfile.TemporaryDirectory() as directory:
-            target = Path(directory) / "lutris.deb"
+            target = Path(directory) / "heroic.deb"
             target.write_bytes(b"previous")
             with patch.object(apps, "urlopen", return_value=io.BytesIO(b"wrong")):
                 with self.assertRaisesRegex(ValueError, "checksum mismatch"):

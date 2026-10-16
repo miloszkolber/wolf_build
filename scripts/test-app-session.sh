@@ -3,8 +3,8 @@
 # No network, GPU, audio server, Docker socket or production state is supplied.
 set -euo pipefail
 image=${1:?image tag required}
-kind=${2:?steam or lutris required}
-case "$kind" in steam|lutris) binary=$kind ;; *) exit 1 ;; esac
+kind=${2:?steam or heroic required}
+case "$kind" in steam|heroic) binary=$kind ;; *) exit 1 ;; esac
 probe="wolf-app-probe:$$"
 container="wolf-app-probe-$$"
 parent="wolf-app-parent-$$"
@@ -29,9 +29,11 @@ test "$(id -u)" = 1234
 test -w "$HOME"
 if [ "${SECOND_RUN:-0}" = 1 ]; then test -f "$HOME/persistence-probe"; fi
 touch "$HOME/persistence-probe"
-if [ "$APP_KIND" = lutris ]; then
-    test "$(readlink "$HOME/.config/lutris/games")" = /var/lutris/library
-    test "$(readlink "$HOME/.local/share/lutris")" = /var/lutris/share
+if [ "$APP_KIND" = heroic ]; then
+    test "$1" = --console
+    test "$2" = --fullscreen
+else
+    test "$(nmcli -g RUNNING general)" = running
 fi
 echo SESSION_PROBE_PASS
 APP

@@ -23,7 +23,6 @@ if [ "$(id -u)" = 0 ]; then
             chmod u+rw "$wayland_socket"
         fi
     fi
-    if [ "${APP_KIND}" = lutris ]; then chown "$PUID:$PGID" /var/lutris; fi
     for device in /dev/dri/* /dev/input/* /dev/hidraw*; do
         [ -c "$device" ] || continue
         gid=$(stat -c %g "$device")
@@ -31,6 +30,20 @@ if [ "$(id -u)" = 0 ]; then
         getent group "$gid" >/dev/null || groupadd -g "$gid" "device-$gid"
         usermod -aG "$(getent group "$gid" | cut -d: -f1)" retro
     done
+    if [ "$APP_KIND" = steam ] && [ "${1:-}" = /opt/app/launch.sh ]; then
+        # A container-private bus lets Big Picture inspect its own network.
+        # Keep Docker's addresses/DNS and deny the status daemon network changes.
+        mkdir -p /run/dbus
+        dbus-daemon --system --fork --nopidfile
+        setpriv --bounding-set=-net_admin,-net_raw -- \
+            NetworkManager --no-daemon --config /opt/app/NetworkManager.conf &
+        ready=false
+        for attempt in {1..50}; do
+            if nmcli general status >/dev/null 2>&1; then ready=true; break; fi
+            sleep 0.1
+        done
+        if [ "$ready" != true ]; then echo 'Network status service failed to start' >&2; exit 1; fi
+    fi
     exec gosu retro "$@"
 fi
 exec "$@"

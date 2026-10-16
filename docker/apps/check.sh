@@ -1,22 +1,21 @@
 #!/bin/bash
 set -euo pipefail
-kind=${1:?steam or lutris}
+kind=${1:?steam or heroic}
 for executable in sway Xwayland gosu tini dbus-run-session bwrap; do command -v "$executable"; done
 case "$kind" in
-steam) command -v steam; dpkg-query -W steam-installer steam-libs:i386 ;;
-lutris)
-    command -v lutris
+steam)
+    command -v steam
+    command -v NetworkManager
+    command -v setpriv
+    dpkg-query -W steam-installer steam-libs:i386 network-manager
+    ;;
+heroic)
+    command -v heroic
     command -v lspci
-    python3 -c 'import google.protobuf'
-    dpkg-query -W lutris wine64 wine32:i386
-    # Version probing creates user cache files. Never bake UID-1000 state into HOME.
-    version_home=$(mktemp -d)
-    trap 'rm -rf "$version_home"' EXIT
-    chown retro:retro "$version_home"
-    gosu retro env HOME="$version_home" lutris --version
-    rm -rf "$version_home"
-    trap - EXIT
-    test ! -e /home/retro/.cache/lutris
+    command -v curl
+    dpkg-query -W heroic
+    closure=$(ldd /opt/Heroic/heroic)
+    if grep -q 'not found' <<< "$closure"; then printf '%s\n' "$closure" >&2; exit 1; fi
     ;;
 *) exit 1 ;;
 esac
@@ -31,7 +30,7 @@ for arch in x86_64-linux-gnu i386-linux-gnu; do
 done
 test -z "$(find /usr/share/vulkan/icd.d -type f ! -name 'intel*.json' -print -quit)"
 test ! -e /usr/bin/pebble
-for package in pulseaudio supervisor network-manager bluez clang gcc; do
+for package in pulseaudio supervisor bluez clang gcc; do
     if dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null | grep -qx installed; then
         echo "Unwanted application-image package: $package" >&2; exit 1
     fi

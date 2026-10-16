@@ -13,6 +13,8 @@ output * bg #000000 solid_color
 for_window [class="steam"] fullscreen disabled
 for_window [class="steam_app_.*"] fullscreen enabled
 bindsym Alt+F4 kill
+seat * hide_cursor 3000
+seat * hide_cursor when-typing enable
 exec /opt/app/run.sh
 SWAY
 width=${GAMESCOPE_WIDTH:-1920}; height=${GAMESCOPE_HEIGHT:-1080}

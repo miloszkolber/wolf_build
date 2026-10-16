@@ -28,7 +28,10 @@ ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/opt/app/entrypoint.sh"]
 
 FROM common AS steam
 RUN apt-get -o Acquire::Retries=5 -o APT::Update::Error-Mode=any update \
-    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends steam-installer \
+    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
+       steam-installer network-manager dbus-system-bus-common util-linux \
+    && mkdir -p /etc/NetworkManager/conf.d \
+    && touch /etc/NetworkManager/conf.d/10-globally-managed-devices.conf \
     && bash /opt/app/trim.sh && rm -rf /var/lib/apt/lists/*
 ENV APP_KIND=steam
 COPY docker/apps/ /opt/app/
@@ -41,23 +44,21 @@ ARG INPUT_SHA256
 LABEL io.wolf-build.input-sha256="${INPUT_SHA256}"
 CMD ["/opt/app/launch.sh"]
 
-FROM common AS lutris
-COPY .build/context/apps/lutris.deb /tmp/lutris.deb
-COPY .build/context/apps/lutris.sha256 /tmp/lutris.sha256
-RUN cd /tmp && sha256sum -c lutris.sha256 \
+FROM common AS heroic
+COPY .build/context/apps/heroic.deb /tmp/heroic.deb
+COPY .build/context/apps/heroic.sha256 /tmp/heroic.sha256
+RUN cd /tmp && sha256sum -c heroic.sha256 \
     && apt-get -o Acquire::Retries=5 -o APT::Update::Error-Mode=any update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-       /tmp/lutris.deb wine wine64 wine32:i386 winetricks cabextract unzip pciutils python3-protobuf \
-       libfreetype6:i386 libsdl2-2.0-0:i386 libsqlite3-0:i386 \
-       gstreamer1.0-libav:i386 gstreamer1.0-plugins-good:i386 libgstreamer-gl1.0-0:i386 \
-    && rm -f /tmp/lutris.deb /tmp/lutris.sha256 && rm -rf /var/lib/apt/lists/* \
-    && install -d -o retro -g retro /var/lutris && bash /opt/app/trim.sh
-ENV APP_KIND=lutris
+       /tmp/heroic.deb curl unzip pciutils xdg-user-dirs \
+    && rm -f /tmp/heroic.deb /tmp/heroic.sha256 && rm -rf /var/lib/apt/lists/* \
+    && bash /opt/app/trim.sh
+ENV APP_KIND=heroic
 COPY docker/apps/ /opt/app/
 COPY .build/context/apps/manifest.json /licenses/manifest.json
-RUN chmod 755 /opt/app/*.sh && /opt/app/check.sh lutris
-LABEL org.opencontainers.image.title="wolf_lutris" \
-      org.opencontainers.image.description="Minimal Lutris application image for the Intel-only Wolf runtime" \
+RUN chmod 755 /opt/app/*.sh && /opt/app/check.sh heroic
+LABEL org.opencontainers.image.title="wolf_heroic" \
+      org.opencontainers.image.description="GOG-first Heroic Console Mode application image for the Intel-only Wolf runtime" \
       org.opencontainers.image.source="https://github.com/miloszkolber/wolf_build"
 ARG INPUT_SHA256
 LABEL io.wolf-build.input-sha256="${INPUT_SHA256}"

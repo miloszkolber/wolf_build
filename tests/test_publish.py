@@ -121,6 +121,9 @@ class PublicationTests(unittest.TestCase):
             publish.validate_tag("wolf_runtime", TAG, "f" * 64)
         with self.assertRaises(ValueError):
             publish.image_name("other-image")
+        with self.assertRaises(ValueError):
+            publish.image_name("wolf_lutris")
+        self.assertEqual(publish.image_name("wolf_heroic"), "ghcr.io/example/wolf_heroic")
 
     def test_pr_or_non_main_cannot_publish(self):
         for ref, event in (("refs/pull/1/merge", "pull_request"), ("refs/heads/topic", "workflow_dispatch"), ("refs/heads/main", "pull_request")):
@@ -137,7 +140,7 @@ class PublicationTests(unittest.TestCase):
             with patch.object(publish, "gh", side_effect=[newer, job]):
                 self.assertTrue(publish.newer_publication_exists("wolf_steam"))
             with patch.object(publish, "gh", side_effect=[newer, job]):
-                self.assertFalse(publish.newer_publication_exists("wolf_lutris"))
+                self.assertFalse(publish.newer_publication_exists("wolf_heroic"))
             failed_post_step = copy.deepcopy(job)
             failed_post_step["jobs"][0]["conclusion"] = "failure"
             with patch.object(publish, "gh", side_effect=[newer, failed_post_step]):

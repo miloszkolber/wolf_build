@@ -15,7 +15,7 @@ class PromotionTests(unittest.TestCase):
         self.assertTrue(promotion.validate(record,record["image_digest"]))
 
     def test_application_acceptance_is_bound_to_repository_and_digest(self):
-        for image in ("wolf_steam", "wolf_lutris"):
+        for image in ("wolf_steam", "wolf_heroic"):
             record=self.record()
             with self.assertRaisesRegex(ValueError,"repository"):
                 promotion.validate(record,record["image_digest"],image)

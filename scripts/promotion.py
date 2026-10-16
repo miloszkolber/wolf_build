@@ -4,11 +4,11 @@ import json
 import re
 from pathlib import Path
 
-CHECKS = ("static", "cold_tcp", "cold_udp", "pairing_reconnect", "audio", "keyboard_mouse", "controller", "steam_lutris", "sustained_stream", "latency_quality", "idle_stop", "drm_release")
+CHECKS = ("static", "cold_tcp", "cold_udp", "pairing_reconnect", "audio", "keyboard_mouse", "controller", "steam_heroic", "sustained_stream", "latency_quality", "idle_stop", "drm_release")
 
 
 def validate(record, digest, image="wolf_runtime"):
-    if image not in ("wolf_runtime", "wolf_steam", "wolf_lutris") or record.get("image_name", "wolf_runtime") != image:
+    if image not in ("wolf_runtime", "wolf_steam", "wolf_heroic") or record.get("image_name", "wolf_runtime") != image:
         raise ValueError("acceptance belongs to a different image repository")
     if not re.fullmatch(r"sha256:[a-f0-9]{64}",digest):
         raise ValueError("candidate must be an exact SHA256 image digest")
@@ -36,7 +36,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("evidence",type=Path)
     parser.add_argument("digest")
-    parser.add_argument("--image", choices=("wolf_runtime", "wolf_steam", "wolf_lutris"), default="wolf_runtime")
+    parser.add_argument("--image", choices=("wolf_runtime", "wolf_steam", "wolf_heroic"), default="wolf_runtime")
     args=parser.parse_args()
     validate(json.loads(args.evidence.read_text()),args.digest,args.image)
     print("Full-session acceptance record matches the image; no publication or deployment performed.")
