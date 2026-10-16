@@ -24,7 +24,6 @@ INTEL_MEDIA_REPO = "intel/media-driver"
 INTEL_VPL_REPO = "intel/vpl-gpu-rt"
 INTEL_LIBVPL_REPO = "intel/libvpl"
 BASE_IMAGE = "ubuntu:26.04"
-GATE_IMAGE = "ghcr.io/miloszkolber/gate"
 
 
 def is_full_sha(value):
@@ -82,7 +81,7 @@ def fingerprint(inputs):
     return hashlib.sha256(canonical.encode()).hexdigest()[:12]
 
 
-def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, media_tag, vpl_tag, libvpl_tag, base_digest, gate_tag="", gate_digest="", gstreamer_series=GSTREAMER_SERIES):
+def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, media_tag, vpl_tag, libvpl_tag, base_digest, gstreamer_series=GSTREAMER_SERIES):
     check_gstreamer(gstreamer_version,gstreamer_series)
     wolf_sha = select_wolf("", wolf_sha)
     compositor_sha = select_named_sha("compositor", "", compositor_sha)
@@ -92,8 +91,6 @@ def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, m
         raise ValueError("libvpl tag must look like v2.17.0")
     if base_digest and not re.fullmatch(r"sha256:[0-9a-f]{64}", base_digest):
         raise ValueError("base digest must look like sha256:<64 hex>")
-    if (gate_tag or gate_digest) and not (gate_tag and re.fullmatch(r"sha256:[0-9a-f]{64}", gate_digest or "")):
-        raise ValueError("gate needs both a tag and a full digest, or neither while publication is pending")
     inputs = {
         "wolf": {"repo": WOLF_REPO, "ref": WOLF_REF, "sha": wolf_sha},
         "gstreamer": {"version": gstreamer_version, "series": gstreamer_series},
@@ -101,7 +98,6 @@ def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, m
         "interpipe": {"repo": INTERPIPE_REPO, "sha": interpipe_sha},
         "intel": {"media_driver": media_tag, "vpl_gpu_rt": vpl_tag, "libvpl": libvpl_tag, "core_version": core},
         "base": {"image": BASE_IMAGE, "digest": base_digest or ""},
-        "gate": {"image": GATE_IMAGE, "tag": gate_tag or "", "digest": gate_digest or "", "status": "resolved" if gate_tag else "pending-publication"},
     }
     short = wolf_sha[:12]
     tag = candidate_tag(wolf_sha, fingerprint(inputs))
@@ -235,8 +231,6 @@ def main():
     parser.add_argument("--vpl-tag", default="")
     parser.add_argument("--libvpl-tag", default="")
     parser.add_argument("--base-digest", default="")
-    parser.add_argument("--gate-tag", default="")
-    parser.add_argument("--gate-digest", default="")
     parser.add_argument("--output", default=".build/manifest.json")
     parser.add_argument("--lock", action="store_true", help="Resolve all build sources, base and toolchain into a buildable lock")
     args = parser.parse_args()
@@ -264,7 +258,7 @@ def main():
     else:
         intel = discover_intel()
     base_digest = args.base_digest or discover_base_digest()
-    manifest = build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, intel["media"], intel["vpl"], intel["libvpl"], base_digest, args.gate_tag, args.gate_digest,gstreamer_series=series)
+    manifest = build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, intel["media"], intel["vpl"], intel["libvpl"], base_digest,gstreamer_series=series)
     if args.lock:
         manifest = lock_sources(manifest, compositor_override=args.compositor_sha)
     path = Path(args.output)
@@ -382,6 +376,8 @@ RUNTIME_PACKAGING = (
 
 
 def packaging_identity(root):
+    if subprocess.check_output(["git", "rev-parse", "--is-shallow-repository"], cwd=root, text=True).strip() == "true":
+        raise ValueError("runtime provenance requires full Git history (checkout fetch-depth: 0)")
     packaging = hashlib.sha256()
     for name in RUNTIME_PACKAGING:
         path = root / name

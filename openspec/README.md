@@ -10,7 +10,7 @@
 | [backlog.md](backlog.md) | Deferred work, not current implementation scope |
 | [config.yaml](config.yaml) | OpenSpec context and rules |
 
-The shared gate change is owned by `llama_build` and is archived under `openspec/changes/archive/2026-10-15-universal-env-gate/`. This repository specifies the consuming deployment boundary, not duplicate gate internals. [Acceptance records](acceptance.md) describe the protected promotion boundary.
+The shared gate is owned by `llama_build`. This repository specifies its consuming interface, not duplicate gate internals or a runtime build dependency. [Acceptance records](acceptance.md) describe full session acceptance separately from automatic checked-image publication.
 
 ## Checks
 

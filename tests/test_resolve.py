@@ -37,7 +37,7 @@ class ResolverTests(unittest.TestCase):
         self.assertEqual(first["wolf_short"], "a" * 12)
         self.assertTrue(first["candidate_tag"].startswith("stable-" + "a" * 12 + "-"))
         self.assertRegex(first["input_hash"], r"[0-9a-f]{12}")
-        self.assertEqual(first["inputs"]["gate"]["status"], "pending-publication")
+        self.assertNotIn("gate", first["inputs"])
         self.assertEqual(first["inputs"]["intel"]["core_version"], "26.3.5")
 
     def test_changed_inputs_change_identity(self):
@@ -78,14 +78,6 @@ class ResolverTests(unittest.TestCase):
             manifest(media_tag="intel-media-26.3.5", vpl_tag="intel-onevpl-26.3.4")
         with self.assertRaises(ValueError):
             manifest(gstreamer_version="1.24.0")
-        with self.assertRaises(ValueError):
-            manifest(gate_tag="latest", gate_digest="")
-
-    def test_gate_resolved_pair(self):
-        digest = "sha256:" + "e" * 64
-        done = manifest(gate_tag="abc123def456", gate_digest=digest)
-        self.assertEqual(done["inputs"]["gate"]["status"], "resolved")
-        self.assertEqual(done["inputs"]["gate"]["digest"], digest)
 
     def test_api_retries_then_succeeds(self):
         calls = []
@@ -152,6 +144,10 @@ class ResolverTests(unittest.TestCase):
             (root / "docker/apps.Dockerfile").write_text("application")
             git("add", "."); git("commit", "-qm", "unrelated")
             self.assertEqual(before, resolve.packaging_identity(root))
+            shallow = root / "shallow"
+            git("clone", "-q", "--depth", "1", root.as_uri(), str(shallow))
+            with self.assertRaisesRegex(ValueError, "full Git history"):
+                resolve.packaging_identity(shallow)
             (root / "docker/wolf.Dockerfile").write_text("changed runtime")
             self.assertNotEqual(before, resolve.packaging_identity(root))
 

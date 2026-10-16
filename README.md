@@ -2,7 +2,7 @@
 
 Intel-focused Wolf streaming runtime and minimal Steam/Lutris application builds, maintained from upstream sources and packages. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
-**Status: ready for operator game/session acceptance.** All three images have published, relabeled candidates with passing CI, payload/session probes and HIGH/CRITICAL scans. Intel H.264/HEVC/AV1 probes passed. Operator-approved `latest` releases may be used for testing before full session acceptance. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [evidence](openspec/changes/intel-wolf-runtime/evidence.md).
+**Status: ready for operator game/session acceptance.** Every successful default-channel build publishes an immutable input-hash tag and advances `latest` to that same checked digest. CI, payload/session probes and HIGH/CRITICAL scans are required. Intel H.264/HEVC/AV1 probes passed, but full game/session acceptance remains separate. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [evidence](openspec/changes/intel-wolf-runtime/evidence.md).
 
 ## Build
 
@@ -12,7 +12,7 @@ Run Python/Bun commands in the development container. Run Docker commands agains
 python3 -m unittest discover -s tests
 bun scripts/check-docs.mjs
 OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
-python3 scripts/resolve.py --lock --gate-tag 816b5f152e99 --gate-digest sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40
+python3 scripts/resolve.py --lock
 python3 scripts/build-inputs.py
 bash scripts/build.sh
 docker run --rm --network none --entrypoint python3 wolf-candidate:local /app/check-runtime.py --static
@@ -40,10 +40,10 @@ Choose the target device explicitly. This probes supported hardware encoders. It
 
 ## Maintain and publish
 
-The candidate workflow runs daily in UTC and on pushes, PRs and manual requests. Set repository variables `GATE_TAG` and `GATE_DIGEST` to an accepted shared-gate version before enabling registry publication. Build once, run final-image/plugin checks, produce a CycloneDX SBOM and fail on HIGH/CRITICAL vulnerabilities. No blanket vulnerability suppression is configured. Changed candidates receive immutable input-hash tags. The same tag is never overwritten with a conflicting full input identity.
+Runtime and application workflows run daily in UTC, on relevant changes, PRs and manual requests. Discovery resolves source/base/recipe identity. Unchanged images are reused, not rebuilt, but still pass fresh payload/session and vulnerability checks. Runtime provenance requires full Git history, so CI fetches it explicitly. Runtime security refresh is weekly and application packages refresh daily. The independently published gate is not a runtime build input and requires no build variables here.
 
-PR build jobs have read-only package permissions and use disposable hosted runners, not trusted Docker/GPU infrastructure. Only a separate default-branch publication job receives package write authority. Candidate publication never advances `latest`.
+Only separate default-branch publication jobs can write packages. A shared publisher validates the checked image identity, preserves existing immutable tags and updates `latest` without rebuilding or changing the digest. Workflow serialization and a newer-publisher check prevent an old re-run from rolling `latest` back. Reusing an unchanged image still repairs a stale/missing `latest`. Explicit `wolf_sha` overrides publish versioned candidates only and do not change the default channel. There is no separate promotion workflow or approval step.
 
-Manual promotion requires the protected `intel-acceptance` environment and an exact digest. It rechecks payload and vulnerability gates before digest-preserving staging and `latest` promotion. Optional external evidence establishes full acceptance. An operator-approved testing `latest` without that evidence remains pending game/session acceptance. See [promotion and acceptance](openspec/acceptance.md).
+PRs use read-only package permissions on disposable hosted runners, never trusted GPU infrastructure. Failed checks leave `latest` unchanged. CI publishes SBOM/scan evidence and rejects immutable-tag identity collisions. Publication is not host rollout, and `latest` is not a claim of completed [game/session acceptance](openspec/acceptance.md).
 
 [`openspec/`](openspec/README.md) owns scope, contracts, tasks and verification. Host paths, credentials, hardware measurements and deployment-specific reports stay outside this repository.

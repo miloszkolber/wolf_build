@@ -48,3 +48,11 @@
 - [x] 7.3 Promote exact checked digests to testing latest under the operator's authorization. Preserve full-acceptance validation and record actual registry results.
 - [x] 7.4 Prepare the weekly maintenance prompt using the existing sibling worker contract. Do not schedule or execute it implicitly.
 - [x] 7.5 Back up and deploy the host stack, preserve pairing/game state, verify cold start and return to idle, and document rollback locally.
+
+## 8. Automatic checked-image publication
+
+- [x] 8.1 Diagnose stale latest from actual workflows/registry and compare successful build manifests. Record the separate manual writer and shallow-checkout provenance defect.
+- [x] 8.2 Share immutable publication/latest repair between runtime and apps. Keep read-only PR builds and separate trusted publishers. Test collisions, failed pushes, stale/missing latest, reused images, explicit source overrides and older re-runs.
+- [x] 8.3 Fetch full runtime Git history and reject shallow provenance. Remove the independent gate from runtime discovery/identity and unused build-variable dependencies. Keep compiler-stage caches.
+- [x] 8.4 Remove the manual promotion workflow and update release/acceptance documentation and prepared maintenance prompt without adding a second policy owner.
+- [ ] 8.5 Verify local checks, observe both CI pipelines to completion and confirm each latest digest equals its checked immutable image. Verify a repeated unchanged run reuses the image and retains/repairs latest. Do not redeploy host services in this build-process task.

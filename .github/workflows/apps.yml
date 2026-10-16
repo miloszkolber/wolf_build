@@ -1,10 +1,10 @@
-name: Build application candidates
+name: Build applications
 on:
   push:
     branches: [main]
-    paths: ['docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'tests/test_apps.py', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/test_apps.py', 'tests/test_publish.py', '.github/workflows/apps.yml']
   pull_request:
-    paths: ['docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'tests/test_apps.py', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/test_apps.py', 'tests/test_publish.py', '.github/workflows/apps.yml']
   schedule:
     - cron: '30 3 * * *'
   workflow_dispatch:
@@ -17,6 +17,9 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +42,23 @@ jobs:
             echo "tag=$(jq -r .tag apps.json)"
           } >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.0.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.1.0
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reuse unchanged image, but repeat its checks and repair latest
+        id: existing
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP: ${{ matrix.app }}
+          TAG: ${{ steps.inputs.outputs.tag }}
+          INPUT: ${{ steps.inputs.outputs.input }}
+        run: python3 scripts/publish.py check "wolf_$APP" "$TAG" "$INPUT" app-test:local
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.0.0
+        if: steps.existing.outputs.unchanged != 'true'
         with:
           context: .
           file: docker/apps.Dockerfile
@@ -99,49 +118,33 @@ jobs:
     needs: build
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
+      actions: read
     strategy:
       matrix:
         app: [steam, lutris]
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: app-image-${{ matrix.app }}
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.0.0
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.1.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish immutable candidate, never latest
+      - name: Publish checked image and latest
         env:
-          OWNER: ${{ github.repository_owner }}
           APP: ${{ matrix.app }}
           GH_TOKEN: ${{ github.token }}
         run: |
           docker load -i candidate.tar
           tag=$(cat tag.txt)
-          [[ "$tag" =~ ^candidate-[a-f0-9]{16}$ ]]
-          image="ghcr.io/${OWNER,,}/wolf_$APP:$tag"
           expected=$(jq -r .input_sha256 apps.json)
-          owner_type=$(gh api "repos/$GITHUB_REPOSITORY" --jq '.owner.type')
-          namespace=users
-          if [ "$owner_type" = Organization ]; then namespace=orgs; fi
-          package_exists=true
-          if ! gh api "$namespace/$OWNER/packages/container/wolf_$APP" > /dev/null 2> package-error.txt; then
-            grep -q '(HTTP 404)' package-error.txt || { cat package-error.txt >&2; exit 1; }
-            package_exists=false
-          fi
-          if [ "$package_exists" = true ] && docker manifest inspect "$image" > /dev/null 2> registry-error.txt; then
-            docker pull "$image"
-            previous=$(docker image inspect "$image" --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')
-            test "$previous" = "$expected" || { echo 'Immutable candidate collision' >&2; exit 1; }
-            echo 'Candidate already published; preserving its digest.'
-          else
-            if [ "$package_exists" = true ]; then
-              grep -qiE 'not found|manifest unknown' registry-error.txt || { cat registry-error.txt >&2; exit 1; }
-            fi
-            docker tag app-test:local "$image"
-            docker push "$image"
-          fi
+          python3 scripts/publish.py publish "wolf_$APP" "$tag" "$expected" app-test:local

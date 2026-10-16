@@ -24,7 +24,9 @@ scripts/check-docs.mjs              # local links and documentation structure
 tests/                             # resolver, manifests and assembly checks
 compose/docker-compose.yaml        # published shared gate + stopped runtime
 compose/.env.example               # deployment-owned paths, IDs and settings
-.github/workflows/build.yml        # daily discovery, candidate build/promotion
+.github/workflows/build.yml        # checked runtime versions and automatic latest
+.github/workflows/apps.yml         # checked Steam/Lutris versions and automatic latest
+scripts/publish.py                 # shared immutable publication and latest repair
 .github/workflows/docs.yml         # documentation validation
 .github/dependabot.yml             # Actions and supported Docker base updates
 openspec/                          # sole documentation and planning tree

@@ -7,3 +7,4 @@
 - Keep each prose paragraph and list item on one physical source line. Preserve structural and literal line breaks.
 - Run the pinned OpenSpec validation documented in `openspec/README.md` in the development container. Distinguish schema checks from executed image, Intel GPU and Moonlight acceptance.
 - Publication is not deployment. Do not start runtimes, alter paired clients or migrate persistent state without rollout authorization.
+- Successful default-channel builds publish the same checked digest under both an immutable tag and `latest`. Keep one publisher per image and do not reintroduce a separate approval/promotion step. Full session acceptance remains separate.

@@ -27,9 +27,14 @@ Application builds SHALL evaluate base, application and package dependencies dai
 
 ### Requirement: Accepted application digest promotion
 
-Application candidates SHALL receive immutable input-identity tags and advance `latest` only through protected operator-approved same-digest promotion. A testing release SHALL NOT imply full-session acceptance.
+Application images SHALL receive immutable input-identity tags and automatically advance `latest` to the same checked digest after successful default-branch builds. Publication SHALL NOT imply full-session acceptance.
 
-#### Scenario: Matching full application acceptance
-- **WHEN** a reviewer supplies full-acceptance evidence for application promotion
-- **THEN** evidence names the exact application repository and image digest and covers complete streaming/game acceptance
-- **AND** wrong-image or CPU-only evidence is rejected without changing `latest`
+#### Scenario: Successful publication
+- **WHEN** application CI passes its final-image/session and vulnerability gates on the default branch
+- **THEN** publication preserves the immutable input tag and advances the same digest to latest, including when the existing image was reused
+- **AND** a newer successful publication cannot be replaced by an older workflow re-run
+
+#### Scenario: Separate full application acceptance
+- **WHEN** a reviewer supplies a full-acceptance record
+- **THEN** it names the exact application repository and digest and covers complete streaming/game acceptance
+- **AND** wrong-image or CPU-only evidence is rejected as acceptance rather than blocking normal checked-image publication

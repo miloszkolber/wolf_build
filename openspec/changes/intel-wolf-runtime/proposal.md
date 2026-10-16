@@ -27,4 +27,4 @@ Gate publication must precede use of environment-driven handoff. The consuming e
 
 Use Ubuntu 26.04 LTS as the first supported-base candidate, subject to an early build and plugin compatibility check. Exact component versions, supported Intel encoding capabilities and the viable minimal plugin set must be resolved and verified during implementation. They are not guessed from the inference stack or frozen in this prose.
 
-Automated promotion of media-stack changes requires a trusted Intel GPU acceptance runner. Until one is available, build candidates automatically but keep `latest` at the last accepted digest and require recorded manual Intel acceptance before promotion.
+Successful default-channel builds automatically advance `latest` after required CI checks. Preserve immutable tags and separate real Intel/Moonlight acceptance from publication. Manual exact-source overrides produce candidates without changing `latest`.

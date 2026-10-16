@@ -1,4 +1,4 @@
-"""Validate external acceptance evidence before promoting an exact image digest."""
+"""Validate full-session acceptance evidence independently of image publication."""
 import argparse
 import json
 import re
@@ -39,7 +39,7 @@ def main():
     parser.add_argument("--image", choices=("wolf_runtime", "wolf_steam", "wolf_lutris"), default="wolf_runtime")
     args=parser.parse_args()
     validate(json.loads(args.evidence.read_text()),args.digest,args.image)
-    print("Acceptance record matches candidate; protected manual approval is still required.")
+    print("Full-session acceptance record matches the image; no publication or deployment performed.")
 
 
 if __name__ == "__main__": main()

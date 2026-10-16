@@ -1,4 +1,4 @@
-name: Build candidate
+name: Build runtime
 on:
   push:
     branches: [main]
@@ -10,13 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       wolf_sha:
-        description: Optional exact Wolf source commit
+        description: Optional exact Wolf commit (versioned image only, does not advance latest)
         type: string
         default: ''
 permissions:
   contents: read
 concurrency:
-  group: candidate-${{ github.ref }}
+  group: runtime-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   check:
@@ -32,9 +32,7 @@ jobs:
       - run: bun scripts/check-docs.mjs
       - run: OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
       - name: Compose syntax without starting containers
-        run: |
-          cp compose/.env.example compose/.env
-          docker compose --env-file compose/.env -f compose/docker-compose.yaml --profile runtime config --quiet
+        run: docker compose --env-file compose/.env.example -f compose/docker-compose.yaml --profile runtime config --quiet
       - uses: docker://rhysd/actionlint:1.7.12
   build:
     needs: check
@@ -45,27 +43,24 @@ jobs:
       packages: read
     outputs:
       tag: ${{ steps.inputs.outputs.tag }}
-      changed: ${{ steps.existing.outputs.unchanged != 'true' }}
       input: ${{ steps.inputs.outputs.input }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .build/sources
           key: sources-${{ runner.os }}-${{ github.run_id }}
           restore-keys: sources-${{ runner.os }}-
-      - name: Resolve once and acquire exact inputs
+      - name: Resolve and acquire runtime inputs
         id: inputs
         env:
           GH_TOKEN: ${{ github.token }}
           WOLF_SHA: ${{ inputs.wolf_sha }}
-          GATE_TAG: ${{ vars.GATE_TAG }}
-          GATE_DIGEST: ${{ vars.GATE_DIGEST }}
         run: |
-          test -n "$GATE_TAG" && test -n "$GATE_DIGEST"
-          python3 scripts/resolve.py --lock --wolf-sha "$WOLF_SHA" --gate-tag "$GATE_TAG" --gate-digest "$GATE_DIGEST"
+          python3 scripts/resolve.py --lock --wolf-sha "$WOLF_SHA"
           python3 scripts/build-inputs.py
           source .build/build.env
           {
@@ -77,42 +72,22 @@ jobs:
             echo "wolf=$WOLF_SHA"
             echo "recipe=$RECIPE_REVISION"
           } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.0.0
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.1.0
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Skip unchanged inputs and reject tag identity collisions
+      - name: Reuse unchanged image, but repeat its checks and repair latest
         id: existing
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
-          OWNER: ${{ github.repository_owner }}
-          TAG: ${{ steps.inputs.outputs.tag }}
-          INPUT_SHA256: ${{ steps.inputs.outputs.input }}
           GH_TOKEN: ${{ github.token }}
-        run: |
-          image="ghcr.io/${OWNER,,}/wolf_runtime:$TAG"
-          owner_type="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.owner.type')"
-          namespace=users
-          if [ "$owner_type" = Organization ]; then namespace=orgs; fi
-          if ! gh api "$namespace/$OWNER/packages/container/wolf_runtime" > package.json 2> package-error.txt; then
-            if grep -q '(HTTP 404)' package-error.txt; then
-              echo 'No readable package exists yet; first publication will create it.'
-              exit 0
-            fi
-            cat package-error.txt >&2; exit 1
-          fi
-          if docker manifest inspect "$image" > /dev/null 2> registry-error.txt; then
-            docker pull "$image"
-            previous="$(docker image inspect "$image" --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')"
-            test "$previous" = "$INPUT_SHA256" || { echo 'Immutable tag identity collision' >&2; exit 1; }
-            echo 'unchanged=true' >> "$GITHUB_OUTPUT"
-          elif ! grep -qiE 'not found|manifest unknown' registry-error.txt; then
-            cat registry-error.txt >&2; exit 1
-          fi
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.0.0
-      - name: Build candidate once
+          TAG: ${{ steps.inputs.outputs.tag }}
+          INPUT: ${{ steps.inputs.outputs.input }}
+        run: python3 scripts/publish.py check wolf_runtime "$TAG" "$INPUT" wolf-test:local
+      - name: Build changed inputs
         if: steps.existing.outputs.unchanged != 'true'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.0.0
         with:
@@ -129,20 +104,17 @@ jobs:
             WOLF_SHA=${{ steps.inputs.outputs.wolf }}
             RECIPE_REVISION=${{ steps.inputs.outputs.recipe }}
           cache-from: type=gha,scope=wolf
-          cache-to: type=gha,scope=wolf,mode=min,ignore-error=true
+          cache-to: type=gha,scope=wolf,mode=max,ignore-error=true
       - name: Verify final runtime without Docker authority or GPU
-        if: steps.existing.outputs.unchanged != 'true'
         run: docker run --rm --network none --entrypoint python3 wolf-test:local /app/check-runtime.py --static
-      - name: Export candidate for SBOM and vulnerability checks
-        if: steps.existing.outputs.unchanged != 'true'
+      - name: Export checked image
         run: docker save wolf-test:local -o candidate.tar
       - name: SBOM and vulnerability assessment
-        if: steps.existing.outputs.unchanged != 'true'
         run: |
           docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --format cyclonedx --output /work/candidate.cdx.json
           docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --severity HIGH,CRITICAL --exit-code 1 --format json --output /work/vulnerabilities.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && steps.existing.outputs.unchanged != 'true'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:
           name: publication-image
           path: candidate.tar
@@ -156,15 +128,19 @@ jobs:
             .build/context/manifest.json
             candidate.cdx.json
             vulnerabilities.json
-            registry-error.txt
   publish:
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.build.outputs.changed == 'true'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
+      actions: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: publication-image
@@ -174,39 +150,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish immutable candidate, never latest
+      - name: ${{ inputs.wolf_sha == '' && 'Publish checked image and latest' || 'Publish exact-version candidate' }}
         env:
-          OWNER: ${{ github.repository_owner }}
-          TAG: ${{ needs.build.outputs.tag }}
-          INPUT_SHA256: ${{ needs.build.outputs.input }}
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+          INPUT: ${{ needs.build.outputs.input }}
+          WOLF_SHA: ${{ inputs.wolf_sha }}
         run: |
           docker load -i candidate.tar
-          loaded="$(docker image inspect wolf-test:local --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')"
-          test "$loaded" = "$INPUT_SHA256"
-          image="ghcr.io/${OWNER,,}/wolf_runtime:$TAG"
-          exists=false
-          if docker buildx imagetools inspect "$image" > existing.txt 2> registry-error.txt; then
-            docker pull "$image"
-            previous="$(docker image inspect "$image" --format '{{ index .Config.Labels "io.wolf-build.input-sha256" }}')"
-            test "$previous" = "$INPUT_SHA256" || { echo 'Immutable tag identity collision' >&2; exit 1; }
-            echo 'Identical candidate identity already exists; retaining its immutable digest.'
-            exists=true
-          elif ! grep -qiE 'not found|manifest unknown' registry-error.txt; then
-            # GHCR can deny a pull scope for a namespace that has never existed.
-            # Confirm absence via authenticated package metadata, not by treating
-            # arbitrary registry/network errors as permission to overwrite.
-            owner_type="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.owner.type')"
-            namespace=users
-            if [ "$owner_type" = Organization ]; then namespace=orgs; fi
-            if gh api "$namespace/$OWNER/packages/container/wolf_runtime" > package.json 2> package-error.txt; then
-              cat registry-error.txt >&2; exit 1
-            elif ! grep -q '(HTTP 404)' package-error.txt; then
-              cat package-error.txt >&2; exit 1
-            fi
-          fi
-          if [ "$exists" = false ]; then
-            docker tag wolf-test:local "$image"
-            docker push "$image"
-          fi
-          docker buildx imagetools inspect "$image" >> "$GITHUB_STEP_SUMMARY"
+          args=()
+          if [ -n "$WOLF_SHA" ]; then args+=(--candidate-only); fi
+          python3 scripts/publish.py publish wolf_runtime "$TAG" "$INPUT" wolf-test:local "${args[@]}"

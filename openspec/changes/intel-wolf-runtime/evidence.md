@@ -1,5 +1,13 @@
 # Evidence and acceptance readiness
 
+## Publication cleanup
+
+Registry inspection confirmed that successful default-branch builds published newer immutable tags while latest remained on the manually promoted image. The separate promotion workflow was the only latest writer. Comparing runtime manifests from runs `38830204146` and `38868876511` showed identical runtime inputs/content hashes and refresh week, with only packaging revision changing from `d9a501a` to documentation commit `9258a85`. The cause was a shallow CI checkout hiding the real last input-changing commit.
+
+Runtime and application publishers now share identity-checked immutable publication and automatic same-digest latest updates. Unchanged images skip compilation, not verification/publication, so stale latest is repaired. Native workflow serialization and a check for newer completed latest-publication steps prevent old re-runs from rolling it back, including independent app-matrix jobs and failures after a successful publication step. Explicit Wolf source overrides remain candidate-only. The manual workflow and unused gate build-variable dependency are removed. Runtime checkout fetches full history and rejects shallow provenance. Intermediate compiler caches are retained.
+
+Local checks pass: 43 unit tests cover acquisition, stable/full/shallow history, publication failures/collisions, reuse/latest repair, PR/non-main rejection, exact-source overrides and publication order. Registry descriptor formatting was checked against the actual published runtime. Docs/schema/actionlint pass. New CI publication and unchanged-run verification remain pending until their workflow results are recorded below.
+
 All three relabeled images are published and ready for operator game/session acceptance. Testing `latest` and host rollout are explicitly authorized separately from complete acceptance. Deployment backups, configuration and rollback records belong to the deployment owner, not this repository.
 
 ## Reviewed image set
