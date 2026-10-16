@@ -6,7 +6,7 @@
 | --- | --- |
 | [project.md](project.md) | Scope, repository boundaries and planned file layout |
 | [specs/](specs/README.md) | Implemented contracts only, currently none |
-| [changes/intel-wolf-runtime/](changes/intel-wolf-runtime/proposal.md) | Initial proposal, design, requirement deltas, tasks and evidence |
+| [changes/archive/2026-10-16-intel-wolf-runtime/](changes/archive/2026-10-16-intel-wolf-runtime/proposal.md) | Initial proposal, design, requirement deltas, tasks and evidence; archived 2026-10-16 after operator acceptance |
 | [backlog.md](backlog.md) | Deferred work, not current implementation scope |
 | [config.yaml](config.yaml) | OpenSpec context and rules |
 

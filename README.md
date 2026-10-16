@@ -2,7 +2,7 @@
 
 Intel-focused Wolf streaming runtime and minimal Steam/Heroic application builds, maintained from upstream sources and packages. Heroic starts in Console Mode for GOG-first TV use. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
-**Status: ready for operator game/session acceptance.** Every successful default-channel build publishes an immutable input-hash tag and advances `latest` to that same checked digest. CI, payload/session probes and HIGH/CRITICAL scans are required. Intel H.264/HEVC/AV1 probes passed, but full game/session acceptance remains separate. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [evidence](openspec/changes/intel-wolf-runtime/evidence.md).
+**Status: delivered and archived.** Every successful default-channel build publishes an immutable input-hash tag and advances `latest` to that same checked digest. CI, payload/session probes and HIGH/CRITICAL scans are required, and updates follow resolved input changes rather than calendar refreshes. Intel isolated codec probes passed and the operator accepted the deployed stack; deployment-specific acceptance records live outside this repository. See the archived [tasks](openspec/changes/archive/2026-10-16-intel-wolf-runtime/tasks.md) and [evidence](openspec/changes/archive/2026-10-16-intel-wolf-runtime/evidence.md).
 
 ## Build
 
@@ -38,7 +38,7 @@ An isolated Intel encode probe, without Docker authority or production state, ca
 docker run --rm --network none --device /dev/dri/renderD128 --entrypoint python3 -v "$PWD/scripts/test-intel.py:/test-intel.py:ro" wolf-candidate:local /test-intel.py
 ```
 
-Choose the target device explicitly. This probes supported hardware encoders. It does not prove Wayland capture, zero-copy session behavior, Moonlight quality, audio, controllers or idle DRM release. Those require the [acceptance procedure](openspec/changes/intel-wolf-runtime/design.md#acceptance-and-recovery) and an operator-reviewed record.
+Choose the target device explicitly. This probes supported hardware encoders. It does not prove Wayland capture, zero-copy session behavior, Moonlight quality, audio, controllers or idle DRM release. Those require the [acceptance procedure](openspec/changes/archive/2026-10-16-intel-wolf-runtime/design.md#acceptance-and-recovery) and an operator-reviewed record.
 
 ## Maintain and publish
 
