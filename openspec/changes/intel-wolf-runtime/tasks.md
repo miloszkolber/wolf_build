@@ -73,7 +73,7 @@
 
 ## 11. Change-driven image updates
 
-- [ ] 11.1 Replace calendar refresh identity with resolved package closures from signed distribution repositories. Share package roots between discovery/build and enforce exact selected versions at assembly.
+- [x] 11.1 Replace calendar refresh identity with resolved package closures from signed distribution repositories. Share package roots between discovery/build and enforce exact selected versions at assembly.
 - [x] 11.2 Resolve Steam/Heroic identities independently so an upstream Heroic release does not rebuild Steam. Keep daily discovery and scans with immutable reuse/latest repair.
 - [x] 11.3 Explain changed inputs in publication evidence and verify date-only/unrelated-package stability, relevant security/dependency changes and resolution failures with fixtures. Real unchanged-run verification is tracked separately below.
 - [ ] 11.4 Verify final-image CI and repeated unchanged discovery/reuse, then update maintained docs/prompt. Do not redeploy host services for publication-policy work.
