@@ -35,6 +35,13 @@ class PackageIdentityTests(unittest.TestCase):
         for altered in (PLAN.replace("@@steam", "@@other"), PLAN + "Remv base-files [14ubuntu1]\n", PLAN + "Inst unsafe selection\n", PLAN + "@@common\n"):
             with self.assertRaises(ValueError): packages.parse_plan(altered, ("common", "steam"))
 
+    def test_target_cannot_omit_an_installed_common_alternative_provider(self):
+        altered = PLAN.replace("@@steam", "Inst seatd (0.9.2-2 Ubuntu:26.04/resolute [amd64])\n@@steam")
+        with self.assertRaisesRegex(ValueError, "inherited common package"):
+            packages.parse_plan(altered, ("common", "steam"))
+        target = altered + "Inst seatd (0.9.2-2 Ubuntu:26.04/resolute [amd64])\n"
+        self.assertEqual(packages.parse_plan(target, ("common", "steam"))["steam"]["seatd:amd64"], "0.9.2-2")
+
     def test_calendar_metadata_does_not_change_image_identity(self):
         closure = packages.parse_plan(PLAN, ("common", "steam"))
         a = {"generated": "2026-10-16", "inputs": {"app": "steam", "base": "a"}}

@@ -57,6 +57,8 @@ def parse_plan(text, stages):
             name, selected_version, arch = match.groups()
             selected[package_key(name, arch)] = version(selected_version)
         closures[stage] = dict(sorted(selected.items()))
+    if stages[0] == "common" and not closures["common"].keys() <= closures[stages[-1]].keys():
+        raise ValueError("target plan omits an inherited common package")
     return closures
 
 
