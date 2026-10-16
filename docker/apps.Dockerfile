@@ -50,7 +50,7 @@ COPY .build/context/apps/heroic.sha256 /tmp/heroic.sha256
 RUN cd /tmp && sha256sum -c heroic.sha256 \
     && apt-get -o Acquire::Retries=5 -o APT::Update::Error-Mode=any update \
     && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-       /tmp/heroic.deb curl unzip pciutils xdg-user-dirs \
+       /tmp/heroic.deb curl unzip pciutils xdg-user-dirs python3 \
     && rm -f /tmp/heroic.deb /tmp/heroic.sha256 && rm -rf /var/lib/apt/lists/* \
     && bash /opt/app/trim.sh
 ENV APP_KIND=heroic

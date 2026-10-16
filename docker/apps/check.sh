@@ -13,9 +13,13 @@ heroic)
     command -v heroic
     command -v lspci
     command -v curl
+    command -v python3
     dpkg-query -W heroic
     closure=$(ldd /opt/Heroic/heroic)
     if grep -q 'not found' <<< "$closure"; then printf '%s\n' "$closure" >&2; exit 1; fi
+    for helper in gogdl legendary nile; do
+        gosu retro "/opt/Heroic/resources/app.asar.unpacked/build/bin/x64/linux/$helper" --version
+    done
     ;;
 *) exit 1 ;;
 esac

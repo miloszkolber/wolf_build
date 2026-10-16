@@ -1,5 +1,13 @@
 # Evidence and acceptance readiness
 
+## GOG-first launcher replacement
+
+Heroic replaces the Lutris target, resolver, publication matrix and maintained acceptance interface. Acquisition selects the stable amd64 deb and verifies its upstream SHA256. Heroic starts with `--console --fullscreen`, retains both graphics/audio ABIs and manages Proton/UMU in user state rather than shipping a second distribution Wine stack. The retired image name is rejected by the shared publisher. Historical evidence remains historical, not a build target.
+
+Local Heroic and Steam builds passed headless/nested session probes with persistence and non-root identity. A real isolated Heroic 2.22.4 launch reported `Frontend Ready` and exposed a fullscreen Wayland window. Probing its bundled GOG/other store tools found a missing Python interpreter despite the deb installing successfully. Python is now explicit and final-image checks execute `gogdl`, `legendary` and `nile` version commands. The corrected local payload check passes all three helpers. These do not establish authenticated GOG downloads or game acceptance.
+
+The misleading Steam network indicator has an evidenced consumer for a private system bus/NetworkManager. An isolated bridge-network probe without NET_ADMIN or NET_RAW reported `connected:full` after observing Docker's externally configured interface and a real HTTP connectivity check. The maintained config disables DNS management and automatic new connections. It does not expose the host bus or host network management. Session checks require the status service to be available to the non-root app. Nested Sway hides the cursor on typing and inactivity. TV-remote event delivery still requires client-specific verification.
+
 ## Live launch fixes
 
 Actual Wolf launches revealed two omissions not covered by earlier isolated startup checks: the default audio chain requires `audiorate`, and non-root applications cannot connect to the compositor's root-owned Wayland socket. Both Steam and Lutris exited with `Could not connect to remote display: Permission denied`. The runtime now builds/checks audiorate and executes a synthetic version of the default conversion/Opus chain without sound devices. The app root setup transfers only the supplied Wayland socket to the configured non-root identity before dropping privileges, without recursive ownership changes or broadening permissions for all users.

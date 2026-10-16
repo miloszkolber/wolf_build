@@ -65,7 +65,7 @@
 
 ## 10. GOG-first TV launcher
 
-- [ ] 10.1 Replace Lutris source/build/publication with checksum-verified Heroic and default Console Mode. Keep Steam and the shared non-root socket contract.
+- [x] 10.1 Replace Lutris source/build/publication with checksum-verified Heroic and default Console Mode. Keep Steam and the shared non-root socket contract.
 - [ ] 10.2 Verify acquisition, final payload, headless/nested sessions, real Heroic frontend and automatic latest publication.
 - [ ] 10.3 Replace the deployment's Lutris entry with Heroic, preserve existing games/pairing/state and remove retired Lutris images/build artifacts after replacement verification.
 - [ ] 10.4 Investigate Steam's offline indicator and audio-device aliases without exposing host system services. Restore TV cursor behavior and diagnose remote input against observed events.
