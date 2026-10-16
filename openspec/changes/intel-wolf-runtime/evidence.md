@@ -8,6 +8,8 @@ Runtime and application publishers now share identity-checked immutable publicat
 
 Local checks pass: 43 unit tests cover acquisition, stable/full/shallow history, publication failures/collisions, reuse/latest repair, PR/non-main rejection, exact-source overrides and publication order. Registry descriptor formatting was checked against the actual published runtime. Docs/schema/actionlint pass. New CI publication and unchanged-run verification remain pending until their workflow results are recorded below.
 
+The first CI attempt caught a source-lock unit fixture reading the real shallow checkout while mocking its other external inputs. The fixture now supplies a fixed packaging identity. Full-history behavior still has a separate real-repository regression, and the runtime resolver retains its shallow-history rejection. All 43 tests also passed in an actual shallow clone after this correction.
+
 All three relabeled images are published and ready for operator game/session acceptance. Testing `latest` and host rollout are explicitly authorized separately from complete acceptance. Deployment backups, configuration and rollback records belong to the deployment owner, not this repository.
 
 ## Reviewed image set

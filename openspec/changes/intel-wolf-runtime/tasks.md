@@ -15,7 +15,7 @@
 
 - [x] 3.1 Build upstream Wolf/compositor/interpipe/media/audio/input components in separate stages and assemble a conservative runtime. Verify binary startup, shutdown/reaping, dynamic plugin closure and license inventory.
 - [x] 3.2 Add static and plugin smoke checks for capture/postprocessing, supported hardware encoder factories, codec parsers, Opus/audio and transport elements. Missing required factories must fail CI.
-- [ ] 3.3 Further incremental payload pruning remains deferred until game acceptance. The reduced Intel payload and same-method size comparison are verified, but further removals still require repeated plugin/game checks with Mesa/LLVM and fallbacks retained.
+- [x] 3.3 Verify the reduced Intel payload and same-method size comparison. Further pruning is optional future optimization, not unfinished required work. Retain compatibility libraries unless removal is supported by repeated plugin/game checks.
 - [ ] 3.4 Verify a candidate digest on Intel hardware against the known working baseline for advertised codecs, hardware routing, zero-copy behavior, latency, quality, audio, controls, application launch and sustained sessions.
 
 ## 4. Consuming deployment
@@ -29,7 +29,7 @@
 - [x] 5.1 Add daily discovery, changed-input builds, weekly security refresh, manual exact-version candidates, dependency-update automation and failure reporting. Test selection decisions with fixtures.
 - [x] 5.2 Add workflow, Compose, docs/schema, resolver, final-image, vulnerability and SBOM checks. Review read-only PR permissions, default-branch publication guards and hosted-runner boundaries, and verify successful CI/publication.
 - [x] 5.3 Implement immutable input-hash candidates and same-digest protected promotion. Verify dependency/acceptance rejection fixtures and registry digest preservation. Review immutable-label collision checks and per-image GitHub concurrency serialization without claiming an executed collision/race simulation.
-- [x] 5.4 Wire protected manual promotion. Required reviewers and main-branch protection remain configured. Full-acceptance validation rejects CPU-only evidence. Operator-approved testing latest is separate from full acceptance.
+- [x] 5.4 Original protected manual promotion delivered. Superseded by automatic checked-image publication in section 8. Full-acceptance validation still rejects CPU-only evidence and remains separate.
 - [ ] 5.5 Review the assembled implementation and evidence, run required checks, then sync/archive verified deltas. Do not count registry publication as host rollout.
 - [x] 5.6 Simplify the build's package acquisition and Compose configuration after review. Verify unchanged-input identity, required gate settings and source checks. Keep runtime acceptance separate.
 
