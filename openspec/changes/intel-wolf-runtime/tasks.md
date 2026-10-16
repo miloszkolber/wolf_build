@@ -47,4 +47,4 @@
 - [x] 7.2 Correct runtime identity provenance so unrelated commits do not invalidate the hash. Add a real Git-history regression test.
 - [x] 7.3 Promote exact checked digests to testing latest under the operator's authorization. Preserve full-acceptance validation and record actual registry results.
 - [x] 7.4 Prepare the weekly maintenance prompt using the existing sibling worker contract. Do not schedule or execute it implicitly.
-- [ ] 7.5 Back up and deploy the host stack, preserve pairing/game state, verify cold start and return to idle, and document rollback locally.
+- [x] 7.5 Back up and deploy the host stack, preserve pairing/game state, verify cold start and return to idle, and document rollback locally.

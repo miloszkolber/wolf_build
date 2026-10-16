@@ -18,7 +18,7 @@ The shared gate remains `816b5f152e99` at `sha256:791ef11cb13be5fbcc59ae5cdb7751
 
 ## Executed checks
 
-Runtime library/plugin/license checks and isolated Intel H.264, HEVC and AV1 encoding passed. Isolated gate/runtime checks passed health-without-wake, cold `/serverinfo`, readiness, idle stop and clean Wolf/Pulse exit. The authorized deployment also passed cold startup and preserved pairing records. This is not proof of complete streaming quality or zero-copy behavior.
+Runtime library/plugin/license checks and isolated Intel H.264, HEVC and AV1 encoding passed. Isolated gate/runtime checks passed health-without-wake, cold `/serverinfo`, readiness, idle stop and clean Wolf/Pulse exit. The authorized deployment also passed cold startup, normal idle shutdown with exit zero and listener reacquisition, and preserved pairing records. This is not proof of complete streaming quality or zero-copy behavior.
 
 Both application images passed Intel library closure for amd64/i386, default/custom UID handling, rejected root-like IDs, real headless Sway/Xwayland fake-app sessions, two-run persistence, clean exit and injected fake-udev execution. The actual Lutris version command works with a disposable HOME. Stock bubblewrap user namespaces passed without SYS_ADMIN. A real Lutris frontend stayed running in an isolated probe, and Intel Vulkan device discovery passed. The offline Steam-state clone probe stopped at its expected network bootstrap; normal-network access to the verified installer URL passed. Actual Steam/game rendering, sound, controllers and complete streaming still require the operator's session tests.
 
