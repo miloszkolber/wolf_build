@@ -59,6 +59,6 @@
 
 ## 9. Live launch compatibility
 
-- [ ] 9.1 Restore the audiorate plugin required by Wolf's default audio pipeline. Add a device-independent conversion/Opus pipeline check and verify the final image.
+- [x] 9.1 Restore the audiorate plugin required by Wolf's default audio pipeline. Add a device-independent conversion/Opus pipeline check and verify the final image.
 - [x] 9.2 Capture short-lived application exit logs from an actual Wolf launch, repair the evidenced application integration failure and verify the same launch boundary. Both apps subsequently passed compositor startup and reached frontend initialization. This is not game/session acceptance.
 - [ ] 9.3 Publish and deploy checked fixes without changing pairing/game state. Keep real game/session acceptance separate from process startup.
