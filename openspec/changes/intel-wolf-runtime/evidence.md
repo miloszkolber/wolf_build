@@ -1,5 +1,11 @@
 # Evidence and acceptance readiness
 
+## Live launch fixes
+
+Actual Wolf launches revealed two omissions not covered by earlier isolated startup checks: the default audio chain requires `audiorate`, and non-root applications cannot connect to the compositor's root-owned Wayland socket. Both Steam and Lutris exited with `Could not connect to remote display: Permission denied`. The runtime now builds/checks audiorate and executes a synthetic version of the default conversion/Opus chain without sound devices. The app root setup transfers only the supplied Wayland socket to the configured non-root identity before dropping privileges, without recursive ownership changes or broadening permissions for all users.
+
+The session check now includes a real nested compositor with an intentionally root-owned mode-600 parent socket. The previous image reproduces the same permission-denied exit at this boundary. Both patched Steam and Lutris images pass headless and nested session probes, Xwayland, custom UID/GID and persistence. This uses a fake application payload and does not establish actual frontend/game/audio acceptance. Final CI publication and deployment of these fixes remain pending.
+
 ## Publication cleanup
 
 Registry inspection confirmed that successful default-branch builds published newer immutable tags while latest remained on the manually promoted image. The separate promotion workflow was the only latest writer. Comparing runtime manifests from runs `38830204146` and `38868876511` showed identical runtime inputs/content hashes and refresh week, with only packaging revision changing from `d9a501a` to documentation commit `9258a85`. The cause was a shallow CI checkout hiding the real last input-changing commit.

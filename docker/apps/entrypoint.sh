@@ -11,6 +11,18 @@ if [ "$(id -u)" = 0 ]; then
     mkdir -p "$HOME" "$XDG_RUNTIME_DIR"
     chown "$PUID:$PGID" "$HOME" "$XDG_RUNTIME_DIR"
     chmod 700 "$XDG_RUNTIME_DIR"
+    # Wolf runs its compositor as root and bind-mounts this session's socket.
+    # Transfer only that socket to the app user before dropping privileges.
+    if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+        case "$WAYLAND_DISPLAY" in
+            /*) wayland_socket=$WAYLAND_DISPLAY ;;
+            *) wayland_socket="$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ;;
+        esac
+        if [ -S "$wayland_socket" ] && [ ! -L "$wayland_socket" ]; then
+            chown "$PUID:$PGID" "$wayland_socket"
+            chmod u+rw "$wayland_socket"
+        fi
+    fi
     if [ "${APP_KIND}" = lutris ]; then chown "$PUID:$PGID" /var/lutris; fi
     for device in /dev/dri/* /dev/input/* /dev/hidraw*; do
         [ -c "$device" ] || continue
