@@ -6,9 +6,19 @@ Registry inspection confirmed that successful default-branch builds published ne
 
 Runtime and application publishers now share identity-checked immutable publication and automatic same-digest latest updates. Unchanged images skip compilation, not verification/publication, so stale latest is repaired. Native workflow serialization and a check for newer completed latest-publication steps prevent old re-runs from rolling it back, including independent app-matrix jobs and failures after a successful publication step. Explicit Wolf source overrides remain candidate-only. The manual workflow and unused gate build-variable dependency are removed. Runtime checkout fetches full history and rejects shallow provenance. Intermediate compiler caches are retained.
 
-Local checks pass: 43 unit tests cover acquisition, stable/full/shallow history, publication failures/collisions, reuse/latest repair, PR/non-main rejection, exact-source overrides and publication order. Registry descriptor formatting was checked against the actual published runtime. Docs/schema/actionlint pass. New CI publication and unchanged-run verification remain pending until their workflow results are recorded below.
+Local checks pass: 43 unit tests cover acquisition, stable/full/shallow history, publication failures/collisions, reuse/latest repair, PR/non-main rejection, exact-source overrides and publication order. Registry descriptor formatting was checked against the actual published runtime. Docs/schema/actionlint pass. Actual CI publication and unchanged-run verification are recorded below.
 
 The first CI attempt caught a source-lock unit fixture reading the real shallow checkout while mocking its other external inputs. The fixture now supplies a fixed packaging identity. Full-history behavior still has a separate real-repository regression, and the runtime resolver retains its shallow-history rejection. All 43 tests also passed in an actual shallow clone after this correction.
+
+Runtime run `38895944958` and Steam/Lutris run `38895944939` succeeded through automatic latest publication. Registry inspection confirmed the following latest digests and matching full input identities. The publisher itself checked exact immutable/latest digest equality after each write.
+
+| Image | Immutable tag | Same-digest latest |
+| --- | --- | --- |
+| wolf_runtime | stable-6a5053b4ebbb-316895581a24 | sha256:8de0c342449780e390b41b6f2be575eefe3ebe320058b150e4396ab3c5d814c1 |
+| wolf_steam | candidate-154b9a09b282e480 | sha256:27649e45fc7bf5ac431e6a59004418d45c3f2877ffae905cdfcf7a42419b1c72 |
+| wolf_lutris | candidate-154b9a09b282e480 | sha256:2012355fad23a78bd84c3012c96dd94cdd8af3811839c02287410c43c30087ac |
+
+Runtime repeat `38896403423` skipped compilation, reran static and vulnerability checks and republished latest at the exact same immutable digest. The intervening documentation-only commit did not change runtime identity. Application repeat `38896788999` also skipped both builds, repeated payload/session and vulnerability checks and published the exact same Steam/Lutris digests. Independent registry inspection confirmed latest/immutable equality for both apps after the repeat. Stale/missing latest and old-run ordering have unit coverage, not a deliberately destructive live registry simulation. No host rollout was performed as part of this publication cleanup.
 
 All three relabeled images are published and ready for operator game/session acceptance. Testing `latest` and host rollout are explicitly authorized separately from complete acceptance. Deployment backups, configuration and rollback records belong to the deployment owner, not this repository.
 
