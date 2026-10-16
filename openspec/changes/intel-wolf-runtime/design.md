@@ -68,7 +68,7 @@ Run resolver/manifest tests, documentation/schema checks, workflow/Compose valid
 
 PRs may test on disposable hosted runners but never publish or run untrusted code with a host Docker socket or on the trusted GPU runner. Serialize promotions per image. A failed update leaves the current `latest` unchanged and produces an actionable workflow failure with the candidate inputs and failing check.
 
-Use a build-unique immutable tag such as `<wolf-version>-<input-hash>` because a dependency-only rebuild can share the same Wolf version. Validate tag syntax and detect identity collisions. Attach full source/input identity as OCI metadata and provenance. Only accepted candidates acquire `latest`. Keep historical versioned images available subject to an explicit retention policy.
+Use a build-unique immutable tag such as `<wolf-version>-<input-hash>` because a dependency-only rebuild can share the same Wolf version. Validate tag syntax and detect identity collisions. Attach full source/input identity as OCI metadata and provenance. Operator-approved candidates may acquire testing `latest` after payload and vulnerability checks, without claiming full game/session acceptance. Optional complete evidence establishes that separate boundary. Keep historical versioned images available subject to an explicit retention policy.
 
 ## Acceptance and recovery
 

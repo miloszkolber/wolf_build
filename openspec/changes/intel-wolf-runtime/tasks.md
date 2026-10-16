@@ -29,7 +29,7 @@
 - [ ] 5.1 Add daily discovery, changed-input builds, weekly security refresh, manual exact-version candidates, dependency-update automation and failure reporting. Test selection decisions with fixtures.
 - [ ] 5.2 Add workflow, Compose, docs/schema, resolver, final-image, vulnerability and SBOM checks. Verify PRs cannot publish or reach trusted Docker/GPU infrastructure.
 - [ ] 5.3 Implement immutable input-hash tags and candidate-to-accepted promotion of the same tested digest. Tests cover dependency-only updates, failed acceptance, conflicting tag identity and concurrent promotion.
-- [x] 5.4 Wire trusted Intel acceptance or a recorded manual promotion gate. Required reviewers and main-branch deployment protection are configured. The CPU-only regression rejects promotion without full session checks. No untested image was promoted.
+- [x] 5.4 Wire protected manual promotion. Required reviewers and main-branch protection remain configured. Full-acceptance validation rejects CPU-only evidence. Operator-approved testing latest is separate from full acceptance.
 - [ ] 5.5 Review the assembled implementation and evidence, run required checks, then sync/archive verified deltas. Do not count registry publication as host rollout.
 - [x] 5.6 Simplify the build's package acquisition and Compose configuration after review. Verify unchanged-input identity, required gate settings and source checks. Keep runtime acceptance separate.
 
@@ -39,4 +39,12 @@
 - [x] 6.2 Add daily dependency/release discovery, checked Lutris acquisition, image package inventories, SBOM/vulnerability gates and immutable candidate publication. Test identity changes and failed acquisition. Review read-only PR authority and publication guards.
 - [x] 6.3 Extend protected same-digest promotion to application images with repository-bound evidence. Reject CPU-only or wrong-image acceptance.
 - [x] 6.4 Build both final images and exercise static payload, custom user identity, isolated compositor/session shutdown and injected fake-udev execution. Record actual checks, not just Dockerfile syntax.
-- [ ] 6.5 Accept real Steam/Proton and Lutris native/Wine games on Intel with audio, controller/hotplug, persistence, reconnect and idle cleanup. Only then promote tested application digests.
+- [ ] 6.5 Obtain operator acceptance for real Steam/Proton and Lutris native/Wine games on Intel with audio, controller/hotplug, persistence, reconnect and idle cleanup. Testing latest may precede this without claiming acceptance.
+
+## 7. Independent release review and host test preparation
+
+- [x] 7.1 Review current source, successful CI artifacts and exact relabeled registry digests. Repeat payload, Intel encode, app-session and stock bubblewrap checks, then rescan all three images.
+- [x] 7.2 Correct runtime identity provenance so unrelated commits do not invalidate the hash. Add a real Git-history regression test.
+- [ ] 7.3 Promote exact checked digests to testing latest under the operator's authorization. Preserve full-acceptance validation and record actual registry results.
+- [x] 7.4 Prepare the weekly maintenance prompt using the existing sibling worker contract. Do not schedule or execute it implicitly.
+- [ ] 7.5 Back up and deploy the host stack, preserve pairing/game state, verify cold start and return to idle, and document rollback locally.

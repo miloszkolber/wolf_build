@@ -1,9 +1,10 @@
-name: Promote accepted digest
+name: Promote tested digest
+run-name: Promote ${{ inputs.image }} (${{ inputs.digest }})
 on:
   workflow_dispatch:
     inputs:
       image:
-        description: Image whose exact candidate was tested in the streaming stack
+        description: Image whose candidate passed automated checks
         type: choice
         options: [wolf_runtime, wolf_steam, wolf_lutris]
         default: wolf_runtime
@@ -12,9 +13,10 @@ on:
         type: string
         required: true
       evidence_url:
-        description: HTTPS URL for the operator-reviewed acceptance JSON
+        description: Optional full-session acceptance JSON. Omit for operator-authorized testing latest.
         type: string
-        required: true
+        required: false
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -33,7 +35,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Require protected manual approval and matching evidence
+      - name: Require protected approval and validate acceptance when supplied
         env:
           GH_TOKEN: ${{ github.token }}
           DIGEST: ${{ inputs.digest }}
@@ -48,6 +50,9 @@ jobs:
           if not any(r.get('type')=='required_reviewers' and r.get('reviewers') for r in env.get('protection_rules', [])):
               raise SystemExit('intel-acceptance must have required reviewers configured')
           url=os.environ['EVIDENCE_URL']
+          if not url:
+              print('Operator-authorized latest for testing; full session acceptance remains pending.')
+              raise SystemExit(0)
           if not url.startswith('https://'):
               raise SystemExit('evidence URL must use HTTPS')
           with urllib.request.urlopen(url, timeout=30) as response:
@@ -69,12 +74,20 @@ jobs:
         run: |
           case "$IMAGE" in wolf_runtime|wolf_steam|wolf_lutris) ;; *) exit 1 ;; esac
           image="ghcr.io/${OWNER,,}/$IMAGE"
+          docker pull "$image@$DIGEST"
+          case "$IMAGE" in
+            wolf_runtime) docker run --rm --network none --entrypoint python3 "$image@$DIGEST" /app/check-runtime.py --static ;;
+            wolf_steam) docker run --rm --network none --entrypoint /opt/app/check.sh "$image@$DIGEST" steam ;;
+            wolf_lutris) docker run --rm --network none --entrypoint /opt/app/check.sh "$image@$DIGEST" lutris ;;
+          esac
+          docker save "$image@$DIGEST" -o promotion.tar
+          docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/promotion.tar --severity HIGH,CRITICAL --exit-code 1
           registry_digest() {
             docker buildx imagetools inspect --format '{{json .Manifest}}' "$1" | jq -er '.digest'
           }
           docker buildx imagetools inspect "$image@$DIGEST"
           # Establish digest-preserving retagging before touching latest.
-          approved="$image:accepted-${DIGEST#sha256:}"
+          approved="$image:tested-${DIGEST#sha256:}"
           docker buildx imagetools create --prefer-index=false --tag "$approved" "$image@$DIGEST"
           staged="$(registry_digest "$approved")"
           test "$staged" = "$DIGEST"
@@ -92,4 +105,4 @@ jobs:
             fi
             echo 'Promotion digest mismatch' >&2; exit 1
           fi
-          echo "Accepted latest: $image@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo "Operator-promoted latest: $image@$DIGEST (not an implicit session acceptance)" >> "$GITHUB_STEP_SUMMARY"

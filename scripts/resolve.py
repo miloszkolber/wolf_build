@@ -367,6 +367,7 @@ def lock_sources(manifest, compositor_override=""):
 # (apps Dockerfile, its scripts and docs tooling) must not force runtime
 # rebuilds; application sources have their own recipe hash in resolve-apps.py.
 RUNTIME_PACKAGING = (
+    ".dockerignore",
     "docker/wolf.Dockerfile",
     "scripts/build-inputs.py",
     "scripts/build.sh",
@@ -376,9 +377,7 @@ RUNTIME_PACKAGING = (
     "scripts/compile-gstreamer.sh",
     "scripts/compile-runtime.sh",
     "scripts/compile-wolf.sh",
-    "scripts/promotion.py",
     "scripts/resolve.py",
-    "scripts/test-intel.py",
 )
 
 
@@ -387,7 +386,7 @@ def packaging_identity(root):
     for name in RUNTIME_PACKAGING:
         path = root / name
         packaging.update(name.encode()+b"\0"+path.read_bytes())
-    revision=subprocess.check_output(["git","rev-parse","HEAD"],cwd=root,text=True).strip()
+    revision=subprocess.check_output(["git","log","-1","--format=%H","--",*RUNTIME_PACKAGING],cwd=root,text=True).strip()
     dirty=bool(subprocess.check_output(["git","status","--porcelain","--",*RUNTIME_PACKAGING],cwd=root,text=True).strip())
     return {"sha256":packaging.hexdigest(), "revision":revision, "dirty":dirty}
 

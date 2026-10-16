@@ -27,9 +27,9 @@ Application builds SHALL evaluate base, application and package dependencies dai
 
 ### Requirement: Accepted application digest promotion
 
-Application candidates SHALL receive immutable input-identity tags and advance `latest` only through the existing protected same-digest acceptance boundary.
+Application candidates SHALL receive immutable input-identity tags and advance `latest` only through protected operator-approved same-digest promotion. A testing release SHALL NOT imply full-session acceptance.
 
-#### Scenario: Matching application acceptance
-- **WHEN** a reviewer approves a tested application candidate for promotion
+#### Scenario: Matching full application acceptance
+- **WHEN** a reviewer supplies full-acceptance evidence for application promotion
 - **THEN** evidence names the exact application repository and image digest and covers complete streaming/game acceptance
 - **AND** wrong-image or CPU-only evidence is rejected without changing `latest`

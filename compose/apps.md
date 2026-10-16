@@ -1,6 +1,6 @@
 # Steam and Lutris images
 
-This repository builds `ghcr.io/<owner>/wolf_steam` and `ghcr.io/<owner>/wolf_lutris` from its own [Dockerfile](../docker/apps.Dockerfile), not from upstream application images. They are candidates until real streaming/game acceptance. No accepted application `latest` is established yet.
+This repository builds `ghcr.io/<owner>/wolf_steam` and `ghcr.io/<owner>/wolf_lutris` from its own [Dockerfile](../docker/apps.Dockerfile). Operator-approved `latest` releases may be tested before full streaming/game acceptance. Use exact digests for controlled rollout and rollback.
 
 ## Payload and compatibility
 
@@ -42,4 +42,4 @@ Keep `start_virtual_compositor = true`, existing runner names and the shared Lut
 
 Before rollout, test both images with the exact Wolf candidate: first login/download, Steam/Proton game, Lutris native/Wine game, 32/64-bit Intel rendering, sound, keyboard/mouse/controller including hotplug, library persistence, normal exit, reconnect and idle cleanup. Retain prior digests/configuration and back up state. Source checks and software rendering do not establish this acceptance.
 
-The shared [promotion workflow](../.github/workflows/promote.yml) accepts `wolf_runtime`, `wolf_steam` or `wolf_lutris`. Application evidence must include matching `image_name` and `image_digest`, a baseline and the complete streaming-stack checks. Reviewer protection and same-digest promotion remain mandatory. Publication is not rollout.
+The shared [promotion workflow](../.github/workflows/promote.yml) accepts all three images. Reviewer protection, payload/vulnerability checks and same-digest promotion remain mandatory. Optional full-acceptance evidence must match `image_name` and `image_digest` and cover complete streaming-stack checks. Operator-approved testing `latest` is not proof of full acceptance or authorization for an unattended host rollout.

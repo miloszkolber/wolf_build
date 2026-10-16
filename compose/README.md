@@ -1,6 +1,6 @@
 # Deployment example
 
-The shared gate comes from `llama_build`. This repository builds only the Wolf runtime. Fixed names, protocol settings, the accepted gate digest, Docker socket and relative state mounts live directly in Compose. `.env` contains only the tested Wolf image and host-specific device/group settings. No JSON config, gate build context or duplicate gate implementation is needed.
+The shared gate comes from `llama_build`. Compose manages gate and runtime. Wolf launches this repository's Steam/Lutris images separately. Fixed names, protocol settings, gate digest, Docker socket and state mounts live in YAML. `.env` contains only the tested Wolf image and device/group settings. No JSON gate config or duplicate gate build is needed.
 
 ## Configure and validate
 
@@ -11,7 +11,7 @@ cp compose/.env.example compose/.env
 docker compose --env-file compose/.env -f compose/docker-compose.yaml --profile runtime config --quiet
 ```
 
-Validation does not create or start containers, prove device permissions or establish GPU support. There is no accepted Wolf `latest` until the first real session acceptance and protected promotion. Use a candidate digest explicitly for isolated testing, never pretend the placeholder tag exists.
+Validation does not create/start containers or prove device/GPU access. Operator-approved testing `latest` may precede complete game/session acceptance. Select a real tested digest, not the placeholder value.
 
 ## Authority and device boundary
 

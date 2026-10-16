@@ -2,7 +2,7 @@
 
 Intel-focused Wolf streaming runtime and minimal Steam/Lutris application builds, maintained from upstream sources and packages. Wolf starts on demand through the shared [llama_build gate](https://github.com/miloszkolber/llama_build/tree/master/cmd/gate).
 
-**Status: candidate verification in progress.** Gate, runtime and Steam/Lutris candidates are published. All three images passed bounded payload/isolated checks and HIGH/CRITICAL vulnerability scans. Wolf's isolated Intel encode and gate cold-request/idle-stop probes passed. Full game/session acceptance remains open. No accepted `latest` or production rollout is established. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [actual evidence](openspec/changes/intel-wolf-runtime/evidence.md).
+**Status: ready for operator game/session acceptance.** All three images have published, relabeled candidates with passing CI, payload/session probes and HIGH/CRITICAL scans. Intel H.264/HEVC/AV1 probes passed. Operator-approved `latest` releases may be used for testing before full session acceptance. See the [task ledger](openspec/changes/intel-wolf-runtime/tasks.md) and [evidence](openspec/changes/intel-wolf-runtime/evidence.md).
 
 ## Build
 
@@ -44,6 +44,6 @@ The candidate workflow runs daily in UTC and on pushes, PRs and manual requests.
 
 PR build jobs have read-only package permissions and use disposable hosted runners, not trusted Docker/GPU infrastructure. Only a separate default-branch publication job receives package write authority. Candidate publication never advances `latest`.
 
-The manual promotion workflow requires an `intel-acceptance` environment with required reviewers, an exact candidate digest and matching external acceptance evidence. Without those controls and successful session/codec evidence it fails closed. It tests digest-preserving staging before changing `latest` and retains accepted digest tags. See [promotion record format](openspec/acceptance.md).
+Manual promotion requires the protected `intel-acceptance` environment and an exact digest. It rechecks payload and vulnerability gates before digest-preserving staging and `latest` promotion. Optional external evidence establishes full acceptance. An operator-approved testing `latest` without that evidence remains pending game/session acceptance. See [promotion and acceptance](openspec/acceptance.md).
 
 [`openspec/`](openspec/README.md) owns scope, contracts, tasks and verification. Host paths, credentials, hardware measurements and deployment-specific reports stay outside this repository.

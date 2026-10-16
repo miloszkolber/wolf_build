@@ -1,5 +1,7 @@
 import importlib.util
 import unittest
+import tempfile
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
@@ -133,6 +135,25 @@ class ResolverTests(unittest.TestCase):
         self.assertIn("scripts/resolve.py", owned)
         for app_owned in ("docker/apps.Dockerfile", "scripts/resolve-apps.py", "scripts/test-app-session.sh", "scripts/check-docs.mjs"):
             self.assertNotIn(app_owned, owned)
+
+    def test_runtime_identity_survives_unrelated_commits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.check_output(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", *args], cwd=root, text=True)
+            git("init", "-q")
+            for name in resolve.RUNTIME_PACKAGING:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("runtime")
+            git("add", "."); git("commit", "-qm", "runtime")
+            before = resolve.packaging_identity(root)
+            (root / "README.md").write_text("documentation")
+            (root / "docker/apps.Dockerfile").write_text("application")
+            git("add", "."); git("commit", "-qm", "unrelated")
+            self.assertEqual(before, resolve.packaging_identity(root))
+            (root / "docker/wolf.Dockerfile").write_text("changed runtime")
+            self.assertNotEqual(before, resolve.packaging_identity(root))
 
 
 if __name__ == "__main__":

@@ -15,15 +15,20 @@ The build SHALL discover updates from each declared upstream owner and acquire e
 
 ### Requirement: Tested immutable publication
 
-Publication SHALL retain immutable build-unique version tags and advance `latest` only to the same digest that passed required static and Intel integration acceptance.
+Publication SHALL retain immutable build-unique version tags and advance `latest` only to an operator-approved digest that passes static and vulnerability checks, without implying that pending full-session acceptance has passed.
 
 #### Scenario: Dependency-only release
 - **WHEN** accepted dependencies change but the Wolf source version does not
 - **THEN** publication produces a distinct version/input-hash tag without overwriting the previous versioned image
 
-#### Scenario: Hardware acceptance unavailable or failed
-- **WHEN** a candidate has only hosted-runner smoke evidence or fails Intel acceptance
-- **THEN** the previous `latest` digest remains unchanged and the candidate's incomplete or failing status is reported
+#### Scenario: Pre-acceptance testing release
+- **WHEN** the operator approves an exact candidate for testing before full game/session acceptance
+- **THEN** protected promotion rechecks its payload and vulnerability gate and advances the same digest to `latest`
+- **AND** it records pending full acceptance rather than creating a false accepted-session result
+
+#### Scenario: Failed candidate
+- **WHEN** payload or vulnerability checks fail, or operator approval is absent
+- **THEN** `latest` remains unchanged and the failure is reported
 
 #### Scenario: Untrusted pull request
 - **WHEN** pull-request validation runs
