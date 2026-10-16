@@ -73,7 +73,7 @@ class LockedInputsTests(unittest.TestCase):
         def raw(repo,sha,path):
             return {"docker/wolf.Dockerfile":"ARG RUST_VERSION=1.96.0\ngit checkout 016b4fc\ncargo install cargo-c@0.10.23", "docker/gstreamer.Dockerfile":"ARG GSTREAMER_VERSION=1.26.7", "CMakeLists.txt":"FetchContent_Declare(mdns_cpp GIT_REPOSITORY https://github.com/games-on-whales/mdns_cpp.git)"}[path]
         with patch.object(resolve,"source_commit",return_value="c"*40),patch.object(resolve,"github_api",side_effect=api),patch.object(resolve,"raw",side_effect=raw),patch.object(resolve,"hub_digest",return_value="sha256:"+"d"*64):
-            with patch.object(resolve,"datetime") as clock:
+            with patch.object(resolve,"datetime") as clock, patch.object(resolve,"packaging_identity",return_value={"sha256":"e"*64,"revision":"f"*40,"dirty":False}):
                 clock.now.return_value=datetime(2026,10,15,8,tzinfo=timezone.utc)
                 manifest=resolve.lock_sources({"inputs":inputs})
                 clock.now.return_value=datetime(2026,10,16,9,tzinfo=timezone.utc)

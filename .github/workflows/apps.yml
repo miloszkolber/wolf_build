@@ -2,9 +2,9 @@ name: Build applications
 on:
   push:
     branches: [main]
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/test_apps.py', 'tests/test_publish.py', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   pull_request:
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/test_apps.py', 'tests/test_publish.py', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   schedule:
     - cron: '30 3 * * *'
   workflow_dispatch:
