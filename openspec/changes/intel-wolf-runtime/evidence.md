@@ -1,5 +1,11 @@
 # Evidence and acceptance readiness
 
+## Change-driven updates
+
+Daily application and weekly runtime calendar salts were creating new identities without proving a dependency changed. Discovery now simulates APT selection against the immutable base from shared package roots, including base-installed security upgrades, and records exact stage closures. Assembly installs those versions and verifies the complete installed inventory. Relevant source/base/recipe/package changes remain build triggers. Repository-wide metadata and the observation date are not triggers. Steam and Heroic resolve separately, so Steam neither queries nor hashes Heroic releases. Changed builds report categories and selected package version deltas against latest. Reused images still pass fresh checks/scans and repair latest when necessary.
+
+The 51-test suite covers calendar-metadata stability, runtime identity across weeks, unrelated APT output, relevant security updates, independent app discovery, missing/removing/unrecognized plans and justification output. The real APT probe required supporting its trailing dependency-status brackets. The first installed-closure check exposed a package-name versus full-line sorting mismatch, which was corrected without relaxing equality. Final-image and repeated unchanged-discovery results are pending until recorded below. This is publication-policy work, not a host rollout.
+
 ## GOG-first launcher replacement
 
 Heroic replaces the Lutris target, resolver, publication matrix and maintained acceptance interface. Acquisition selects the stable amd64 deb and verifies its upstream SHA256. Heroic starts with `--console --fullscreen`, retains both graphics/audio ABIs and manages Proton/UMU in user state rather than shipping a second distribution Wine stack. The retired image name is rejected by the shared publisher. Historical evidence remains historical, not a build target.

@@ -2,9 +2,9 @@ name: Build applications
 on:
   push:
     branches: [main]
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   pull_request:
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   schedule:
     - cron: '30 3 * * *'
   workflow_dispatch:
@@ -33,11 +33,13 @@ jobs:
         id: inputs
         env:
           GH_TOKEN: ${{ github.token }}
+          APP: ${{ matrix.app }}
         run: |
-          python3 scripts/resolve-apps.py > apps.json
+          python3 scripts/resolve-apps.py --app "$APP"
+          bash scripts/resolve-packages.sh "$APP"
+          python3 scripts/lock-packages.py "$APP" > apps.json
           {
             echo "base=$(jq -r .inputs.base apps.json)"
-            echo "refresh=$(jq -r .inputs.refresh apps.json)"
             echo "input=$(jq -r .input_sha256 apps.json)"
             echo "tag=$(jq -r .tag apps.json)"
           } >> "$GITHUB_OUTPUT"
@@ -68,7 +70,6 @@ jobs:
           tags: app-test:local
           build-args: |
             BASE_IMAGE=${{ steps.inputs.outputs.base }}
-            REFRESH=${{ steps.inputs.outputs.refresh }}
             INPUT_SHA256=${{ steps.inputs.outputs.input }}
           cache-from: type=gha,scope=apps-${{ matrix.app }}
           cache-to: type=gha,scope=apps-${{ matrix.app }},mode=min,ignore-error=true

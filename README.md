@@ -13,6 +13,8 @@ python3 -m unittest discover -s tests
 bun scripts/check-docs.mjs
 OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
 python3 scripts/resolve.py --lock
+bash scripts/resolve-packages.sh runtime
+python3 scripts/lock-packages.py runtime
 python3 scripts/build-inputs.py
 bash scripts/build.sh
 docker run --rm --network none --entrypoint python3 wolf-candidate:local /app/check-runtime.py --static
@@ -40,7 +42,9 @@ Choose the target device explicitly. This probes supported hardware encoders. It
 
 ## Maintain and publish
 
-Runtime and application workflows run daily in UTC, on relevant changes, PRs and manual requests. Discovery resolves source/base/recipe identity. Unchanged images are reused, not rebuilt, but still pass fresh payload/session and vulnerability checks. Runtime provenance requires full Git history, so CI fetches it explicitly. Runtime security refresh is weekly and application packages refresh daily. The independently published gate is not a runtime build input and requires no build variables here.
+Runtime and application workflows check daily in UTC, on relevant changes, PRs and manual requests. New images require changed sources, shipped recipes, base/toolchain digests or selected distribution-package versions. Discovery resolves the exact dependency closure, including inherited base security updates, from signed repositories. Assembly installs those versions and verifies the installed closure. A changed date or unrelated repository update does not create an image. Steam and Heroic have separate identities, so a Heroic release does not rebuild Steam. Unchanged images are reused and freshly checked/scanned. Runtime provenance requires full Git history. The independent gate is not a runtime build input.
+
+The workflow's build justification names changed input categories and package version deltas. Exact manifests, package locks, SBOM and scan results provide the evidence. Checks may report a newly disclosed vulnerability even when no fixed upstream package exists. That failure is not bypassed by producing an identical calendar-labelled image. Normal repositories may retire older versions, so a lock that is no longer available fails assembly and needs fresh discovery rather than silently floating to another version.
 
 Only separate default-branch publication jobs can write packages. A shared publisher validates the checked image identity, preserves existing immutable tags and updates `latest` without rebuilding or changing the digest. Workflow serialization and a newer-publisher check prevent an old re-run from rolling `latest` back. Reusing an unchanged image still repairs a stale/missing `latest`. Explicit `wolf_sha` overrides publish versioned candidates only and do not change the default channel. There is no separate promotion workflow or approval step.
 

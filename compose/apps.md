@@ -17,13 +17,15 @@ The build removes separate non-Intel Vulkan drivers and ICD registrations in the
 Run Python in the development container, then Docker in the development Docker context:
 
 ```sh
-python3 scripts/resolve-apps.py > .build/apps.json
-docker build -f docker/apps.Dockerfile --target steam --build-arg BASE_IMAGE="$(jq -r .inputs.base .build/apps.json)" --build-arg REFRESH="$(jq -r .inputs.refresh .build/apps.json)" --build-arg INPUT_SHA256="$(jq -r .input_sha256 .build/apps.json)" -t wolf-steam:local .
+python3 scripts/resolve-apps.py --app steam
+bash scripts/resolve-packages.sh steam
+python3 scripts/lock-packages.py steam > .build/apps.json
+docker build -f docker/apps.Dockerfile --target steam --build-arg BASE_IMAGE="$(jq -r .inputs.base .build/apps.json)" --build-arg INPUT_SHA256="$(jq -r .input_sha256 .build/apps.json)" -t wolf-steam:local .
 ```
 
-Use target `heroic` for the second image. No GPU, Docker socket or production state is needed to build either target. The common stage is shared locally. [Application CI](../.github/workflows/apps.yml) runs daily, on application-source changes, PRs and manual dispatch. Daily cache invalidation upgrades packages inherited from the base as well as installing current application dependencies, even without a new Heroic release. There is no snapshot-mirror or distro-port maintenance layer.
+Use profile and target `heroic` for the second image. Package discovery uses Docker to simulate dependency selection in the immutable base, without GPU, production state or a mounted Docker socket. The common stage is shared locally. [Application CI](../.github/workflows/apps.yml) checks daily, on source changes, PRs and dispatch. It selects actual package versions including base security upgrades. Only changed relevant inputs create a new image. The date is metadata, not a cache invalidator. Steam does not resolve Heroic releases or include them in its identity. Shared package roots in `docker/packages/` feed discovery, and generated exact locks feed assembly. There is no snapshot-mirror or distro-port maintenance layer.
 
-Each image embeds the resolved base/release/recipe/refresh manifest, the exact installed package versions and package copyright files. CI records image size, CycloneDX SBOM and HIGH/CRITICAL vulnerability findings. It tests non-default UID/GID setup without devices/network. Failed checks prevent candidate publication. PRs cannot publish. Input-hash candidate tags are never overwritten. Installed packages are recorded, not claimed frozen for a later rebuild. Preserve the original tested digest for rollback.
+Each image embeds its resolved base/release/recipe/package manifest and installed package inventory. CI records image size, CycloneDX SBOM and HIGH/CRITICAL findings and tests non-default UID/GID plus nested sessions. Failed checks prevent publication. PRs cannot publish and input-hash tags are never overwritten. Assembly enforces the resolved package versions and closure. If a normal repository has retired a selected version, assembly fails rather than substituting it. Preserve tested digests for rollback. Unchanged daily discovery still reuses and scans the existing image, without manufacturing a new digest.
 
 ## Wolf integration
 

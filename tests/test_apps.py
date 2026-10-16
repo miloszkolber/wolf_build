@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 import io
 import sys
+from contextlib import redirect_stdout
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 spec = importlib.util.spec_from_file_location("apps", Path(__file__).resolve().parents[1] / "scripts/resolve-apps.py")
@@ -26,8 +27,8 @@ class ApplicationInputsTests(unittest.TestCase):
             item = release(); item["assets"][0][field] = value
             with self.assertRaises(ValueError): apps.heroic_asset(item)
 
-    def test_base_release_recipe_and_refresh_change_identity(self):
-        original = {"base": "a", "heroic": "2.22.4", "recipe": "a", "refresh": "2026-10-15"}
+    def test_base_release_recipe_and_package_change_identity(self):
+        original = {"base": "a", "heroic": "2.22.4", "recipe": "a", "packages": "1.0"}
         self.assertEqual(apps.identity(original), apps.identity(dict(reversed(list(original.items())))))
         for key in original:
             changed = dict(original); changed[key] += "-changed"
@@ -48,18 +49,43 @@ class ApplicationInputsTests(unittest.TestCase):
             root = Path(directory)
             (root / "docker/apps").mkdir(parents=True)
             (root / "scripts").mkdir()
+            (root / "docker/packages").mkdir()
+            for name in ("common", "steam", "heroic"):
+                (root / f"docker/packages/{name}.txt").write_text(name)
+            for name in ("package-plan.sh", "resolve-packages.sh", "lock-packages.py", "install-packages.sh"):
+                (root / "scripts" / name).write_text(name)
             (root / ".dockerignore").write_text("context")
             (root / "docker/apps.Dockerfile").write_text("FROM test")
             (root / "scripts/resolve-apps.py").write_text("resolver")
             (root / "scripts/resolve.py").write_text("discovery")
             script = root / "docker/apps/launch.sh"
             script.write_text("first")
-            first = apps.recipe_hash(root)
+            first = apps.recipe_hash(root, "steam")
             script.write_text("second")
-            self.assertNotEqual(first, apps.recipe_hash(root))
-            second = apps.recipe_hash(root)
+            self.assertNotEqual(first, apps.recipe_hash(root, "steam"))
+            second = apps.recipe_hash(root, "steam")
             (root / "scripts/resolve.py").write_text("changed-discovery")
-            self.assertNotEqual(second, apps.recipe_hash(root))
-            third = apps.recipe_hash(root)
+            self.assertNotEqual(second, apps.recipe_hash(root, "steam"))
+            third = apps.recipe_hash(root, "steam")
             (root / ".dockerignore").write_text("changed context")
-            self.assertNotEqual(third, apps.recipe_hash(root))
+            self.assertNotEqual(third, apps.recipe_hash(root, "steam"))
+            steam = apps.recipe_hash(root, "steam")
+            heroic = apps.recipe_hash(root, "heroic")
+            (root / "docker/packages/heroic.txt").write_text("changed Heroic packages")
+            self.assertEqual(steam, apps.recipe_hash(root, "steam"))
+            self.assertNotEqual(heroic, apps.recipe_hash(root, "heroic"))
+
+    def test_steam_discovery_never_resolves_or_acquires_heroic(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(apps, "discover_base_digest", return_value="sha256:" + "b" * 64), \
+             patch.object(apps, "recipe_hash", return_value="c" * 64), \
+             patch.object(apps, "github_api") as api, patch.object(apps, "download") as download, \
+             patch("sys.argv", ["resolve-apps.py", "--app", "steam", "--output", directory]), redirect_stdout(io.StringIO()):
+            apps.main()
+            import json
+            manifest = json.loads((Path(directory) / "manifest.json").read_text())
+        self.assertNotIn("heroic", manifest["inputs"])
+        self.assertNotIn("refresh", manifest["inputs"])
+        self.assertNotIn("tag", manifest)
+        api.assert_not_called()
+        download.assert_not_called()

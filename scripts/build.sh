@@ -5,7 +5,6 @@ cd "$(dirname "$0")/.."
 source .build/build.env
 docker build --platform linux/amd64 -f docker/wolf.Dockerfile \
     --build-arg "BASE_IMAGE=$BASE_IMAGE" --build-arg "RUST_IMAGE=$RUST_IMAGE" \
-    --build-arg "SECURITY_REFRESH=$SECURITY_REFRESH" \
     --build-arg "INPUT_SHA256=$INPUT_SHA256" --build-arg "WOLF_SHA=$WOLF_SHA" \
     --build-arg "RECIPE_REVISION=$RECIPE_REVISION" \
     --build-arg "BUILD_JOBS=${BUILD_JOBS:-2}" -t "${IMAGE:-wolf-candidate:local}" .

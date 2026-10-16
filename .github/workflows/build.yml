@@ -61,12 +61,13 @@ jobs:
           WOLF_SHA: ${{ inputs.wolf_sha }}
         run: |
           python3 scripts/resolve.py --lock --wolf-sha "$WOLF_SHA"
+          bash scripts/resolve-packages.sh runtime
+          python3 scripts/lock-packages.py runtime
           python3 scripts/build-inputs.py
           source .build/build.env
           {
             echo "base=$BASE_IMAGE"
             echo "rust=$RUST_IMAGE"
-            echo "refresh=$SECURITY_REFRESH"
             echo "tag=$CANDIDATE_TAG"
             echo "input=$INPUT_SHA256"
             echo "wolf=$WOLF_SHA"
@@ -99,7 +100,6 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ steps.inputs.outputs.base }}
             RUST_IMAGE=${{ steps.inputs.outputs.rust }}
-            SECURITY_REFRESH=${{ steps.inputs.outputs.refresh }}
             INPUT_SHA256=${{ steps.inputs.outputs.input }}
             WOLF_SHA=${{ steps.inputs.outputs.wolf }}
             RECIPE_REVISION=${{ steps.inputs.outputs.recipe }}

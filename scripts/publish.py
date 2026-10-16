@@ -91,6 +91,42 @@ def reuse(name, tag, identity, local):
     return bool(result)
 
 
+def input_changes(before, after):
+    changes = []
+    for key in sorted(before.keys() | after.keys()):
+        if before.get(key) == after.get(key):
+            continue
+        if key == "distribution":
+            old, new = before.get(key, {}), after.get(key, {})
+            for stage in sorted(old.keys() | new.keys()):
+                a, b = old.get(stage, {}), new.get(stage, {})
+                packages = [name for name in sorted(a.keys() | b.keys()) if a.get(name) != b.get(name)]
+                changes.append(f"{stage} packages ({len(packages)}): " + ", ".join(
+                    f"{name} {a.get(name, 'absent')} -> {b.get(name, 'removed')}" for name in packages[:20]))
+        else:
+            changes.append(key + " changed")
+    return changes
+
+
+def explain_new_inputs(name):
+    path = Path(".build/context/manifest.json" if name == "wolf_runtime" else ".build/context/apps/manifest.json")
+    current = json.loads(path.read_text())["inputs"]
+    previous = inspect(f"{image_name(name)}:latest") if package_exists(name) else None
+    if previous:
+        reference = f"{image_name(name)}@{previous['manifest']['digest']}"
+        command("docker", "pull", reference)
+        previous_inputs = json.loads(command("docker", "run", "--rm", "--network", "none", "--entrypoint",
+                                            "cat", reference, "/licenses/manifest.json"))["inputs"]
+        reasons = input_changes(previous_inputs, current)
+    else:
+        reasons = ["initial checked publication"]
+    report = "Build justification: " + ("; ".join(reasons) or "immutable tag missing for these resolved inputs")
+    print(report, flush=True)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as output:
+            output.write(report + "\n")
+
+
 def newer_publication_exists(name):
     """Do not let an old workflow re-run roll latest back after a newer writer."""
     repo = os.environ["GITHUB_REPOSITORY"]
@@ -159,6 +195,10 @@ def main():
     validate_tag(args.image, args.tag, args.identity)
     if args.action == "check":
         unchanged = reuse(args.image, args.tag, args.identity, args.local)
+        if unchanged:
+            print("Inputs unchanged: reuse the immutable image and repeat verification.", flush=True)
+        else:
+            explain_new_inputs(args.image)
         with open(os.environ["GITHUB_OUTPUT"], "a") as output:
             output.write(f"unchanged={str(unchanged).lower()}\n")
     else:

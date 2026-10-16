@@ -1,0 +1,7 @@
+ca-certificates bash python3 supervisor pulseaudio pulseaudio-utils
+libssl3t64 libicu78 libcurl4t64 libunwind8 libevdev2 libinput10
+libxkbcommon0 libwayland-server0 libwayland-client0 libwayland-cursor0 libwayland-egl1 libgbm1 libegl1
+libgles2 libgl1 libopengl0 libdrm2 libpci3 libudev1 libglib2.0-0t64
+libopus0 libaom3 libx264-165 libx265-215 libcap2 libdw1t64 libgudev-1.0-0
+libx11-xcb1 libxfixes3 libxdamage1 libxrandr2 liborc-0.4-0t64
+libjpeg-turbo8 libpng16-16t64 xwayland hwdata libdwarf1 libquadmath0

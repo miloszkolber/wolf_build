@@ -56,9 +56,15 @@ def main():
     manifest = json.loads(Path(args.manifest).read_text())
     if manifest.get("version") != 2 or not manifest["inputs"].get("sources"):
         raise ValueError("a version 2 --lock manifest is required")
+    if set(manifest["inputs"].get("distribution", {})) != {"build", "runtime"}:
+        raise ValueError("resolved distribution package locks are required")
     if manifest["inputs"].get("packaging") != packaging_identity(Path(__file__).resolve().parents[1]):
         raise ValueError("packaging changed after resolution; refresh the packaging identity or resolve a new lock")
     root = Path(args.context)
+    for stage, packages in manifest["inputs"]["distribution"].items():
+        expected = "".join(f"{name}={selected}\n" for name, selected in sorted(packages.items()))
+        if (root / "packages" / f"{stage}.lock").read_text() != expected:
+            raise ValueError("package lock changed after resolution: " + stage)
     cache = root.parent / "sources"
     root.mkdir(parents=True, exist_ok=True)
     inventory = {}
@@ -92,7 +98,7 @@ def main():
             raise ValueError("unlocked base/toolchain image")
     recipe=manifest["inputs"]["packaging"]["revision"]
     if not is_full_sha(recipe): raise ValueError("invalid packaging revision")
-    (root.parent / "build.env").write_text(f'BASE_IMAGE={base["image"]}@{base["digest"]}\nRUST_IMAGE={rust["image"]}@{rust["digest"]}\nCANDIDATE_TAG={manifest["candidate_tag"]}\nINPUT_SHA256={manifest["input_sha256"]}\nRECIPE_REVISION={recipe}\nWOLF_SHA={manifest["inputs"]["wolf"]["sha"]}\nSECURITY_REFRESH={manifest["inputs"]["refresh_week"]}\n')
+    (root.parent / "build.env").write_text(f'BASE_IMAGE={base["image"]}@{base["digest"]}\nRUST_IMAGE={rust["image"]}@{rust["digest"]}\nCANDIDATE_TAG={manifest["candidate_tag"]}\nINPUT_SHA256={manifest["input_sha256"]}\nRECIPE_REVISION={recipe}\nWOLF_SHA={manifest["inputs"]["wolf"]["sha"]}\n')
     print("Acquired exact Git objects, not upstream-signed archive checksums.")
 
 

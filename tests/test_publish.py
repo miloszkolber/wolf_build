@@ -20,6 +20,12 @@ def descriptor(identity=IDENTITY, digest=DIGEST):
 
 
 class PublicationTests(unittest.TestCase):
+    def test_build_justification_names_relevant_package_changes(self):
+        before = {"base": "a", "distribution": {"steam": {"libssl:amd64": "1.0"}}}
+        self.assertEqual(publish.input_changes(before, before), [])
+        after = {"base": "a", "distribution": {"steam": {"libssl:amd64": "1.1"}}}
+        self.assertEqual(publish.input_changes(before, after), ["steam packages (1): libssl:amd64 1.0 -> 1.1"])
+
     def setUp(self):
         env = {"GITHUB_REPOSITORY_OWNER": "Example", "GITHUB_REPOSITORY": "Example/wolf_build",
                "GITHUB_RUN_NUMBER": "10", "GITHUB_WORKFLOW_REF": "Example/wolf_build/.github/workflows/build.yml@refs/heads/main"}

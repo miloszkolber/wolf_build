@@ -25,9 +25,12 @@ def heroic_asset(release):
     return {"version": tag[1:], "url": url, "sha256": asset["digest"][7:]}
 
 
-def recipe_hash(root):
+def recipe_hash(root, app):
     digest = hashlib.sha256()
-    paths = [root / ".dockerignore", root / "docker/apps.Dockerfile", root / "scripts/resolve-apps.py", root / "scripts/resolve.py", *sorted((root / "docker/apps").glob("*"))]
+    paths = [root / ".dockerignore", root / "docker/apps.Dockerfile", root / "scripts/resolve-apps.py", root / "scripts/resolve.py",
+             *(root / "scripts" / name for name in ("package-plan.sh", "resolve-packages.sh", "lock-packages.py", "install-packages.sh")),
+             root / "docker/packages/common.txt", root / f"docker/packages/{app}.txt",
+             *sorted((root / "docker/apps").glob("*"))]
     for path in paths:
         digest.update(str(path.relative_to(root)).encode() + b"\0" + path.read_bytes())
     return digest.hexdigest()
@@ -54,21 +57,24 @@ def download(asset, target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--app", required=True, choices=("steam", "heroic"))
     parser.add_argument("--output", type=Path, default=Path(".build/context/apps"))
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     inputs = {
+        "app": args.app,
         "base": BASE_IMAGE + "@" + discover_base_digest(),
-        "heroic": heroic_asset(github_api("repos/Heroic-Games-Launcher/HeroicGamesLauncher/releases/latest")),
-        "refresh": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "recipe_sha256": recipe_hash(root),
-        "steam": "Ubuntu steam-installer; Valve client updates per-user at launch",
+        "recipe_sha256": recipe_hash(root, args.app),
     }
     args.output.mkdir(parents=True, exist_ok=True)
-    download(inputs["heroic"], args.output / "heroic.deb")
-    (args.output / "heroic.sha256").write_text(inputs["heroic"]["sha256"] + "  heroic.deb\n")
-    digest = identity(inputs)
-    manifest = {"version": 1, "inputs": inputs, "input_sha256": digest, "tag": "candidate-" + digest[:16]}
+    if args.app == "heroic":
+        inputs["heroic"] = heroic_asset(github_api("repos/Heroic-Games-Launcher/HeroicGamesLauncher/releases/latest"))
+        download(inputs["heroic"], args.output / "heroic.deb")
+        (args.output / "heroic.sha256").write_text(inputs["heroic"]["sha256"] + "  heroic.deb\n")
+    else:
+        inputs["steam"] = "Ubuntu steam-installer; Valve client updates per-user at launch"
+    # This discovery record cannot publish until lock-packages adds the closure.
+    manifest = {"version": 2, "generated": datetime.now(timezone.utc).isoformat(), "inputs": inputs}
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps(manifest))
 

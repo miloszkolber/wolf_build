@@ -10,8 +10,18 @@ The build SHALL discover updates from each declared upstream owner and acquire e
 - **AND** incompatible or unverifiable input fails the candidate without changing the accepted image
 
 #### Scenario: Security refresh
-- **WHEN** the weekly refresh runs without a new Wolf release
-- **THEN** supported distribution/base security updates are evaluated and any resulting new input set receives its own candidate identity
+- **WHEN** daily discovery runs without a new Wolf release
+- **THEN** supported base and selected distribution-package updates are evaluated and an actually changed input set receives its own identity
+- **AND** calendar changes or unrelated repository metadata do not force a new image
+
+#### Scenario: Locked package assembly
+- **WHEN** dependency discovery selects distribution packages for a build stage or final image
+- **THEN** it records the exact dependency closure including inherited base updates from signed repositories
+- **AND** assembly installs those selected versions and rejects unavailable versions or a mismatched installed closure
+
+#### Scenario: Publication justification
+- **WHEN** a changed-input image is built
+- **THEN** CI records changed input categories and relevant package version deltas alongside the exact manifest
 
 ### Requirement: Tested immutable publication
 

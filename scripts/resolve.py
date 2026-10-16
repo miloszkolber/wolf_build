@@ -349,7 +349,6 @@ def lock_sources(manifest, compositor_override=""):
     # Toolchain discovery is separate from the runtime payload.
     rust_tag = rust.group(1)+"-slim-bookworm"
     inputs["toolchain"] = {"rust_version":rust.group(1), "image":f"rust:{rust_tag}", "digest":hub_digest("rust", rust_tag)}
-    inputs["refresh_week"] = datetime.now(timezone.utc).strftime("%G-W%V")
     inputs["packaging"] = packaging_identity(Path(__file__).resolve().parents[1])
     manifest["input_hash"] = fingerprint(inputs)
     manifest["candidate_tag"] = candidate_tag(wolf_sha, manifest["input_hash"])
@@ -372,6 +371,12 @@ RUNTIME_PACKAGING = (
     "scripts/compile-runtime.sh",
     "scripts/compile-wolf.sh",
     "scripts/resolve.py",
+    "scripts/package-plan.sh",
+    "scripts/resolve-packages.sh",
+    "scripts/lock-packages.py",
+    "scripts/install-packages.sh",
+    "docker/packages/build.txt",
+    "docker/packages/runtime.txt",
 )
 
 

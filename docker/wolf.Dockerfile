@@ -4,20 +4,9 @@ ARG RUST_IMAGE
 FROM ${RUST_IMAGE} AS rust
 FROM ${BASE_IMAGE} AS build
 ENV DEBIAN_FRONTEND=noninteractive
-ARG SECURITY_REFRESH
-RUN test -n "$SECURITY_REFRESH" \
-    && apt-get -o APT::Update::Error-Mode=any -o Acquire::Retries=5 update \
-    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-    build-essential clang cmake ninja-build pkg-config python3 meson bison flex nasm \
-    git ca-certificates autoconf automake libtool gettext curl \
-    libboost-all-dev libssl-dev libcurl4-openssl-dev libunwind-dev libevdev-dev \
-    libinput-dev libxkbcommon-dev libwayland-dev wayland-protocols libgbm-dev \
-    libegl-dev libgles-dev libopengl-dev libdrm-dev libpci-dev libpulse-dev \
-    libudev-dev libglib2.0-dev libopus-dev libaom-dev libx264-dev libx265-dev \
-    libcap-dev libdw-dev libgudev-1.0-dev libx11-xcb-dev libxfixes-dev \
-    libxdamage-dev libxrandr-dev libxcb-dri3-dev libxcb-present-dev \
-    liborc-0.4-dev libjpeg-dev libpng-dev libdwarf-dev libicu-dev libzstd-dev zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
+COPY scripts/install-packages.sh /install-packages.sh
+COPY .build/context/packages/build.lock /package-locks/build.lock
+RUN bash /install-packages.sh /package-locks/build.lock
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
 ENV PATH=/usr/local/cargo/bin:/opt/wolf-runtime/bin:$PATH \
@@ -48,19 +37,10 @@ RUN bash /compile-wolf.sh
 
 FROM ${BASE_IMAGE} AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
-ARG SECURITY_REFRESH
-RUN test -n "$SECURITY_REFRESH" \
-    && rm -f /usr/bin/pebble \
-    && apt-get -o APT::Update::Error-Mode=any -o Acquire::Retries=5 update \
-    && apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-    ca-certificates bash python3 supervisor pulseaudio pulseaudio-utils \
-    libssl3t64 libicu78 libcurl4t64 libunwind8 libevdev2 libinput10 \
-    libxkbcommon0 libwayland-server0 libwayland-client0 libwayland-cursor0 libwayland-egl1 libgbm1 libegl1 \
-    libgles2 libgl1 libopengl0 libdrm2 libpci3 libudev1 libglib2.0-0t64 \
-    libopus0 libaom3 libx264-165 libx265-215 libcap2 libdw1t64 libgudev-1.0-0 \
-    libx11-xcb1 libxfixes3 libxdamage1 libxrandr2 liborc-0.4-0t64 \
-    libjpeg-turbo8 libpng16-16t64 xwayland hwdata libdwarf1 libquadmath0 \
-    && rm -rf /var/lib/apt/lists/*
+COPY scripts/install-packages.sh /install-packages.sh
+COPY .build/context/packages/runtime.lock /licenses/runtime-packages.lock
+RUN rm -f /usr/bin/pebble && bash /install-packages.sh /licenses/runtime-packages.lock \
+    && rm /install-packages.sh
 COPY --from=build /opt/wolf-runtime/ /opt/wolf-runtime/
 COPY --from=build /wolf/ /wolf/
 COPY --from=build /sources/wolf/docker/startup.sh /startup.sh

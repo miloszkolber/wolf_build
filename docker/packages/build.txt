@@ -1,0 +1,9 @@
+build-essential clang cmake ninja-build pkg-config python3 meson bison flex nasm
+git ca-certificates autoconf automake libtool gettext curl
+libboost-all-dev libssl-dev libcurl4-openssl-dev libunwind-dev libevdev-dev
+libinput-dev libxkbcommon-dev libwayland-dev wayland-protocols libgbm-dev
+libegl-dev libgles-dev libopengl-dev libdrm-dev libpci-dev libpulse-dev
+libudev-dev libglib2.0-dev libopus-dev libaom-dev libx264-dev libx265-dev
+libcap-dev libdw-dev libgudev-1.0-dev libx11-xcb-dev libxfixes-dev
+libxdamage-dev libxrandr-dev libxcb-dri3-dev libxcb-present-dev
+liborc-0.4-dev libjpeg-dev libpng-dev libdwarf-dev libicu-dev libzstd-dev zlib1g-dev
