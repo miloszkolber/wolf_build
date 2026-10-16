@@ -11,7 +11,7 @@ The upstream general-purpose Wolf image inherits multi-vendor GPU libraries, bro
 - Preserve zero-copy capture/encoding, embedded PulseAudio, fake-udev, controller integration and upstream application-container behavior.
 - Consume the universal shared gate image with environment-only `port-handoff` configuration. Eliminate the consuming `gate.json` file, mount and `--config` argument.
 - Publish build-unique tags and a tested `latest`, with input provenance, licenses, SBOM and exact rollback identity.
-- Build minimal Steam and Lutris application images here, with regular release/package updates and tracked dependencies. PulseAudio remains embedded in Wolf rather than becoming another image.
+- Build minimal Steam and Heroic application images here, with regular release/package updates and tracked dependencies. Heroic Console Mode replaces Lutris for GOG-first TV use. PulseAudio remains embedded in Wolf rather than becoming another image.
 
 ## Capabilities
 

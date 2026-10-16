@@ -39,7 +39,7 @@
 - [x] 6.2 Add daily dependency/release discovery, checked Lutris acquisition, image package inventories, SBOM/vulnerability gates and immutable candidate publication. Test identity changes and failed acquisition. Review read-only PR authority and publication guards.
 - [x] 6.3 Extend protected same-digest promotion to application images with repository-bound evidence. Reject CPU-only or wrong-image acceptance.
 - [x] 6.4 Build both final images and exercise static payload, custom user identity, isolated compositor/session shutdown and injected fake-udev execution. Record actual checks, not just Dockerfile syntax.
-- [ ] 6.5 Obtain operator acceptance for real Steam/Proton and Lutris native/Wine games on Intel with audio, controller/hotplug, persistence, reconnect and idle cleanup. Testing latest may precede this without claiming acceptance.
+- [ ] 6.5 Obtain operator acceptance for real Steam/Proton and Heroic GOG games on Intel with audio, controller/hotplug, persistence, reconnect and idle cleanup. Heroic replaces the retired Lutris acceptance target. Testing latest may precede this without claiming acceptance.
 
 ## 7. Independent release review and host test preparation
 
@@ -66,6 +66,7 @@
 ## 10. GOG-first TV launcher
 
 - [x] 10.1 Replace Lutris source/build/publication with checksum-verified Heroic and default Console Mode. Keep Steam and the shared non-root socket contract.
-- [ ] 10.2 Verify acquisition, final payload, headless/nested sessions, real Heroic frontend and automatic latest publication.
-- [ ] 10.3 Replace the deployment's Lutris entry with Heroic, preserve existing games/pairing/state and remove retired Lutris images/build artifacts after replacement verification.
-- [ ] 10.4 Investigate Steam's offline indicator and audio-device aliases without exposing host system services. Restore TV cursor behavior and diagnose remote input against observed events.
+- [x] 10.2 Verify acquisition, final payload, headless/nested sessions, real Heroic frontend and automatic latest publication.
+- [x] 10.3 Replace the deployment's Lutris entry with Heroic, preserve existing games/pairing/state and remove retired Lutris images/build artifacts after replacement verification.
+- [x] 10.4 Restore Steam's network-status API without host service access. Verify connected/full as the non-root app and load the idle/typing cursor policy. Document default/virtual audio selection without claiming duplicate hardware.
+- [ ] 10.5 Obtain client-specific TV-remote key press/release evidence and verify intermittent Down plus live cursor behavior. Input classification and client forwarding remain unverified without the TV/Moonlight details and live test.

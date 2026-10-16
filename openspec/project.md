@@ -8,7 +8,7 @@
 | Universal gate | `llama_build` | Existing `ghcr.io/miloszkolber/gate` image |
 | Deployment example | This repository | `compose/docker-compose.yaml` and `compose/.env.example` |
 | Wolf protocol, compositor and application behavior | Games on Whales upstream | Exact resolved sources, not a maintained application fork |
-| Steam and Lutris images | This repository | Minimal `wolf_steam` and `wolf_lutris` candidates, daily package/release updates and dependency inventories |
+| Steam and Heroic images | This repository | Minimal `wolf_steam` and `wolf_heroic` candidates, daily package/release updates and dependency inventories |
 | Host rollout and acceptance | Deployment owner | Local configuration, state backups and hardware evidence |
 
 The registry owner for the new runtime is configured at publication. Do not create a remote, registry package or credentials as part of planning.
@@ -25,7 +25,7 @@ tests/                             # resolver, manifests and assembly checks
 compose/docker-compose.yaml        # published shared gate + stopped runtime
 compose/.env.example               # deployment-owned paths, IDs and settings
 .github/workflows/build.yml        # checked runtime versions and automatic latest
-.github/workflows/apps.yml         # checked Steam/Lutris versions and automatic latest
+.github/workflows/apps.yml         # checked Steam/Heroic versions and automatic latest
 scripts/publish.py                 # shared immutable publication and latest repair
 .github/workflows/docs.yml         # documentation validation
 .github/dependabot.yml             # Actions and supported Docker base updates
