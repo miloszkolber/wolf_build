@@ -69,7 +69,7 @@
 - [x] 10.2 Verify acquisition, final payload, headless/nested sessions, real Heroic frontend and automatic latest publication.
 - [x] 10.3 Replace the deployment's Lutris entry with Heroic, preserve existing games/pairing/state and remove retired Lutris images/build artifacts after replacement verification.
 - [x] 10.4 Restore Steam's network-status API without host service access. Verify connected/full as the non-root app and load the idle/typing cursor policy. Document default/virtual audio selection without claiming duplicate hardware.
-- [ ] 10.5 Obtain client-specific TV-remote key press/release evidence and verify intermittent Down plus live cursor behavior. Input classification and client forwarding remain unverified without the TV/Moonlight details and live test.
+- [x] 10.5 Intermittent TV-remote Down stopped reproducing on its own; the operator reports navigation normal with no image or compose change. Recorded as resolved-by-observation without a diagnosed root cause; the cursor-on-typing/inactivity policy remains loaded. If it recurs, capture the client device, Moonlight version and real key press/release events before changing anything.
 
 ## 11. Change-driven image updates
 
