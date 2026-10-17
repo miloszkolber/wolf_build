@@ -100,6 +100,15 @@ class PublicationTests(unittest.TestCase):
             self.assertTrue(publish.reuse("wolf_runtime", TAG, IDENTITY, "checked:local"))
         self.assertEqual(command.call_args_list[0].args, ("docker", "pull", "ghcr.io/example/wolf_runtime@" + DIGEST))
 
+    def test_renamed_tag_reuses_latest_digest_for_an_unchanged_identity(self):
+        reference = "ghcr.io/example/wolf_steam:latest"
+        with patch.object(publish, "package_exists", return_value=True), \
+             patch.object(publish, "inspect", side_effect=[None, descriptor()]), \
+             patch.object(publish, "command", side_effect=self.commands) as command:
+            self.assertTrue(publish.reuse("wolf_steam", IDENTITY[:16], IDENTITY, "checked:local"))
+        self.assertEqual(command.call_args_list[0].args, ("docker", "pull", "ghcr.io/example/wolf_steam@" + DIGEST))
+        self.assertFalse(any(args[:2] == ("docker", "pull") and reference in args[2] for args in command.call_args_list))
+
     def test_package_404_is_bootstrap_but_permission_errors_are_not(self):
         for status in (404, 403):
             error = subprocess.CalledProcessError(1, ["gh"], stderr=f"gh: error (HTTP {status})")
@@ -122,7 +131,9 @@ class PublicationTests(unittest.TestCase):
 
     def test_tag_and_owner_validation(self):
         publish.validate_tag("wolf_runtime", TAG, IDENTITY)
-        publish.validate_tag("wolf_steam", "candidate-" + IDENTITY[:16], IDENTITY)
+        publish.validate_tag("wolf_steam", IDENTITY[:16], IDENTITY)
+        with self.assertRaises(ValueError):
+            publish.validate_tag("wolf_steam", "candidate-" + IDENTITY[:16], IDENTITY)
         with self.assertRaises(ValueError):
             publish.validate_tag("wolf_runtime", TAG, "f" * 64)
         with self.assertRaises(ValueError):

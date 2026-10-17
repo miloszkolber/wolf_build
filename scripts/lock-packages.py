@@ -71,7 +71,7 @@ def apply(manifest, profile, closures):
         manifest["input_hash"] = digest[:12]
         manifest["candidate_tag"] = "stable-" + inputs["wolf"]["sha"][:12] + "-" + digest[:12]
     else:
-        manifest["tag"] = "candidate-" + digest[:16]
+        manifest["tag"] = digest[:16]
     return manifest
 
 

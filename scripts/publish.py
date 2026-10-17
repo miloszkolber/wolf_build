@@ -58,7 +58,7 @@ def package_exists(name):
 
 
 def validate_tag(name, tag, identity):
-    pattern = r"stable-[a-f0-9]{12}-[a-f0-9]{12}" if name == "wolf_runtime" else r"candidate-[a-f0-9]{16}"
+    pattern = r"stable-[a-f0-9]{12}-[a-f0-9]{12}" if name == "wolf_runtime" else r"[a-f0-9]{16}"
     if not re.fullmatch(pattern, tag) or not re.fullmatch(r"[a-f0-9]{64}", identity):
         raise ValueError("invalid immutable tag/input identity")
     if not tag.endswith(identity[:12] if name == "wolf_runtime" else identity[:16]):
@@ -84,6 +84,17 @@ def existing(name, tag, identity):
 
 def reuse(name, tag, identity, local):
     result = existing(name, tag, identity)
+    if result is None:
+        # The previous tag naming included a "candidate-" prefix. An unchanged
+        # identity under the renamed tag still reuses the checked digest, and
+        # publish() repairs the missing immutable tag without a rebuild.
+        reference = f"{image_name(name)}:latest"
+        result = inspect(reference)
+        if result:
+            try:
+                validate_identity(result["image"]["config"].get("Labels", {}), identity)
+            except ValueError:
+                result = None  # latest is a different identity; build the new inputs
     if result:
         reference = f"{image_name(name)}@{result['manifest']['digest']}"
         command("docker", "pull", reference)
