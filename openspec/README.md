@@ -8,6 +8,7 @@
 | [specs/](specs/README.md) | Implemented contracts only, currently none |
 | [changes/archive/2026-10-16-intel-wolf-runtime/](changes/archive/2026-10-16-intel-wolf-runtime/proposal.md) | Initial proposal, design, requirement deltas, tasks and evidence; archived 2026-10-16 after operator acceptance |
 | [backlog.md](backlog.md) | Deferred work, not current implementation scope |
+| [maintenance-state.md](maintenance-state.md) | Reviewed cursor of the scheduled dependency review |
 | [config.yaml](config.yaml) | OpenSpec context and rules |
 
 The shared gate is owned by `llama_build`. This repository specifies its consuming interface, not duplicate gate internals or a runtime build dependency. [Acceptance records](acceptance.md) describe full session acceptance separately from automatic checked-image publication.

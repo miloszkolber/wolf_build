@@ -1,7 +1,7 @@
 name: wolf
 services:
   wolf:
-    image: ghcr.io/miloszkolber/gate:816b5f152e99@sha256:791ef11cb13be5fbcc59ae5cdb77512c57a30bcb2ab5d729294cd09976e28b40
+    image: ghcr.io/miloszkolber/gate:d2f678bec2f5@sha256:cb14c151aabacd0e979951a94abcd9c05af67e79bbbe0e1b16deb7d9a5f0d401
     container_name: wolf
     restart: always
     network_mode: host

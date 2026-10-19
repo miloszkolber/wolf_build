@@ -15,6 +15,13 @@ from urllib.request import Request, urlopen
 MANIFEST_VERSION = 1
 WOLF_REPO = "games-on-whales/wolf"
 WOLF_REF = "stable"
+# Upstream moved `stable` to its latest published GitHub release during the
+# 2026-10 release-channel migration. The only published release is v2024.07
+# (40b0c5c, 2024-07-10), which predates the build metadata this lock reads and
+# cannot be built here, so discovery holds the last reviewed source commit until
+# upstream publishes its first calendar release. Review and clear the hold then;
+# openspec/maintenance-state.md records the reviewed identity.
+WOLF_SHA_PIN = "6a5053b4ebbb19f2c0f3bf1e8fbbd8babf109273"
 COMPOSITOR_REPO = "games-on-whales/gst-wayland-display"
 COMPOSITOR_PIN = "016b4fc"
 INTERPIPE_REPO = "games-on-whales/gst-interpipe"
@@ -132,6 +139,11 @@ def git_ls_remote(url, *refs):
 
 
 def discover_wolf_stable():
+    """Resolve Wolf's source from its release channel, or the reviewed pin."""
+    if WOLF_SHA_PIN:
+        if not is_full_sha(WOLF_SHA_PIN):
+            raise ValueError("wolf source pin must be a full source commit")
+        return WOLF_SHA_PIN
     values = git_ls_remote("https://github.com/" + WOLF_REPO + ".git", "refs/heads/" + WOLF_REF)
     sha = values.get("refs/heads/" + WOLF_REF, "")
     return select_wolf("", sha)

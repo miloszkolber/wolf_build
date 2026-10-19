@@ -79,6 +79,18 @@ class ResolverTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             manifest(gstreamer_version="1.24.0")
 
+    def test_wolf_source_pin_holds_discovery(self):
+        self.assertRegex(resolve.WOLF_SHA_PIN, r"[0-9a-f]{40}")
+        with patch.object(resolve, "git_ls_remote", side_effect=AssertionError("a hold must not query the release channel")):
+            self.assertEqual(resolve.discover_wolf_stable(), resolve.WOLF_SHA_PIN)
+        self.assertTrue(manifest(wolf_sha=resolve.WOLF_SHA_PIN)["candidate_tag"].startswith("stable-" + resolve.WOLF_SHA_PIN[:12] + "-"))
+        with patch.object(resolve, "WOLF_SHA_PIN", ""):
+            with patch.object(resolve, "git_ls_remote", return_value={"refs/heads/stable": "e" * 40}):
+                self.assertEqual(resolve.discover_wolf_stable(), "e" * 40)
+        with patch.object(resolve, "WOLF_SHA_PIN", "not-a-commit"):
+            with self.assertRaises(ValueError):
+                resolve.discover_wolf_stable()
+
     def test_api_retries_then_succeeds(self):
         calls = []
 
