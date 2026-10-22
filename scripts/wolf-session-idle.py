@@ -30,10 +30,15 @@ def log(message):
     print(f"[session-idle] {message}", flush=True)
 
 
+def kind(name):
+    """Wolf broadcasts rfl type names, e.g. wolf::core::events::PauseStreamEvent."""
+    return name.rsplit("::", 1)[-1]
+
+
 def session_of(name, data):
     if not isinstance(data, dict):
         return None
-    value = data.get("client_id") if name == CREATED else data.get("session_id")
+    value = data.get("client_id") if kind(name) == CREATED else data.get("session_id")
     return None if value is None else str(value)
 
 
@@ -47,6 +52,7 @@ class IdleSessions:
         session = session_of(name, data)
         if session is None:
             return
+        name = kind(name)
         if name == PAUSE:
             self.deadlines.setdefault(session, now + self.timeout)
             self.attempts.pop(session, None)

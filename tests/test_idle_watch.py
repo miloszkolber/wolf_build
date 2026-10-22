@@ -21,9 +21,16 @@ class EventLineTests(unittest.TestCase):
         self.assertEqual(messages, [("PauseStreamEvent", '{"session_id": 7}'), ("ResumeStreamEvent", '{"session_id": 7}')])
 
     def test_session_identifier_from_session_and_creation_events(self):
-        self.assertEqual(idle.session_of("PauseStreamEvent", {"session_id": 7}), "7")
-        self.assertEqual(idle.session_of("StreamSession", {"client_id": "42"}), "42")
-        self.assertIsNone(idle.session_of("ResumeStreamEvent", {}))
+        self.assertEqual(idle.session_of("wolf::core::events::PauseStreamEvent", {"session_id": "7"}), "7")
+        self.assertEqual(idle.session_of("wolf::core::events::StreamSession", {"client_id": "42"}), "42")
+        self.assertIsNone(idle.session_of("wolf::core::events::ResumeStreamEvent", {}))
+
+    def test_stream_name_matches_on_the_short_type_name(self):
+        state = idle.IdleSessions(60)
+        state.events("wolf::core::events::PauseStreamEvent", {"session_id": "7"}, 100)
+        self.assertEqual(state.deadlines, {"7": 160})
+        state.events("wolf::core::events::ResumeStreamEvent", {"session_id": "7"}, 110)
+        self.assertEqual(state.deadlines, {})
 
 
 class IdleSessionTests(unittest.TestCase):
