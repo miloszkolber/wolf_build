@@ -3,7 +3,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-import socket
 import subprocess
 import sys
 
@@ -52,19 +51,38 @@ def static():
     print("Static libraries/plugins/license manifest checked; no GPU acceptance claimed.")
 
 
-def health():
-    # Presence of a supervisor process alone is not runtime readiness.
-    workers = []
+def listening_ports(paths=("/proc/net/tcp", "/proc/net/tcp6")):
+    """Ports in LISTEN state, read without opening a connection."""
+    ports = set()
+    for name in paths:
+        try:
+            lines = Path(name).read_text().splitlines()[1:]
+        except OSError:
+            continue
+        for line in lines:
+            fields = line.split()
+            if len(fields) > 3 and fields[3] == "0A":
+                try: ports.add(int(fields[1].rsplit(":", 1)[1], 16))
+                except (IndexError, ValueError): pass
+    return ports
+
+
+def wolf_running():
     for path in Path("/proc").glob("[0-9]*/comm"):
         try:
-            if path.read_text().strip() == "wolf": workers.append(path)
+            if path.read_text().strip() == "wolf": return True
         except (OSError, ProcessLookupError): pass
-    if not workers: return False
-    for port in (47984,47989,48010):
-        try:
-            with socket.create_connection(("127.0.0.1",port),timeout=0.5): pass
-        except OSError: return False
-    return True
+    return False
+
+
+def health():
+    # Presence of a supervisor process alone is not runtime readiness.
+    if not wolf_running(): return False
+    # Wolf's RTSP server treats an accepted connection as a request, so dialling
+    # it logged a failed transmission on every interval. A completed TCP
+    # handshake only proves the kernel accepted it, not that Wolf serves it.
+    # Readiness is the listening socket itself, read without a connection.
+    return {47984, 47989, 48010} <= listening_ports()
 
 
 def main():
