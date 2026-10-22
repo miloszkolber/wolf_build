@@ -374,6 +374,7 @@ def lock_sources(manifest, compositor_override=""):
 RUNTIME_PACKAGING = (
     ".dockerignore",
     "docker/wolf.Dockerfile",
+    "docker/runtime/wolf-session-idle.conf",
     "scripts/build-inputs.py",
     "scripts/build.sh",
     "scripts/check-runtime.py",
@@ -387,6 +388,7 @@ RUNTIME_PACKAGING = (
     "scripts/resolve-packages.sh",
     "scripts/lock-packages.py",
     "scripts/install-packages.sh",
+    "scripts/wolf-session-idle.py",
     "docker/packages/build.txt",
     "docker/packages/runtime.txt",
 )

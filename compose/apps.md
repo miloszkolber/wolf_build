@@ -4,7 +4,11 @@ This repository builds `ghcr.io/<owner>/wolf_steam` and `ghcr.io/<owner>/wolf_he
 
 ## Payload and compatibility
 
-Both targets use a digest-pinned Ubuntu 26.04 base, package-managed Sway/Xwayland, a small session D-Bus, non-root application processes and Mesa/ALSA/Pulse client libraries for amd64 and i386. The 32-bit libraries are required by Steam/Proton/Wine. PulseAudio's server remains in Wolf. There is no second audio container, desktop environment, panel, terminal, NVIDIA integration, Decky loader, gamescope build or copied upstream base-app image.
+Both targets use a digest-pinned Ubuntu 26.04 base, package-managed Sway/Xwayland, a small session D-Bus, non-root application processes and Mesa/ALSA/Pulse client libraries for amd64 and i386. The 32-bit libraries are required by Steam/Proton/Wine. PulseAudio's server remains in Wolf. There is no second audio container, desktop environment, panel, terminal, NVIDIA integration, Decky loader or copied upstream base-app image. Steam also carries gamescope, selected with `RUN_GAMESCOPE=1`, because its Big Picture menu is a surface inside the Steam window that a tiling compositor hides behind a fullscreen game. Heroic does not install gamescope and rejects the request.
+
+## Compositor selection
+
+Sway remains the default for both applications. Set `RUN_GAMESCOPE=1` and remove `RUN_SWAY` from the Steam runner environment to composite Steam and the game with gamescope instead. The launcher validates the requested binary before starting, so a typo or a Heroic runner fails instead of silently falling back. Gamescope uses Wolf's `GAMESCOPE_WIDTH`, `GAMESCOPE_HEIGHT` and `GAMESCOPE_REFRESH` values and hides the cursor after three idle seconds.
 
 Steam installs Ubuntu's `steam-installer` with no recommended packages. Valve's client, Proton and games update in the persistent user home, not in a fabricated immutable Steam-client version. Their runtime updates are outside the distribution package inventory. A container-private system bus and NetworkManager provide Big Picture's network-status API. The status daemon observes Docker's externally configured interface without NET_ADMIN/NET_RAW, leaves addresses/DNS unchanged and uses a real connectivity probe. No host system bus, host NetworkManager, Bluetooth daemon or desktop service is exposed.
 
@@ -29,7 +33,7 @@ Each image embeds its resolved base/release/recipe/package manifest and installe
 
 ## Wolf integration
 
-Wolf creates these application containers, not Compose. It supplies `PUID`, `PGID`, `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY`, Pulse server/sink/source, linked DRM/input devices, fake-udev and the per-user `/home/retro` mount. The entrypoint keeps those paths and groups, changes ownership only on top-level writable directories and the supplied session Wayland socket, then drops privileges before launching the application. It does not recursively rewrite game-library ownership. Nested Sway hides the cursor after inactivity and while typing for couch navigation.
+Wolf creates these application containers, not Compose. It supplies `PUID`, `PGID`, `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY`, Pulse server/sink/source, linked DRM/input devices, fake-udev and the per-user `/home/retro` mount. The entrypoint keeps those paths and groups, changes ownership only on top-level writable directories and the supplied session Wayland socket, then drops privileges before launching the application. It does not recursively rewrite game-library ownership. Nested Sway hides the cursor after inactivity and while typing for couch navigation; gamescope hides it after the same idle delay.
 
 The maintained runner references use unpinned `:latest` images and a Heroic runner name with a `heroic-games:/games:rw` shared library:
 
@@ -38,7 +42,7 @@ image = "ghcr.io/<owner>/wolf_steam:latest"
 image = "ghcr.io/<owner>/wolf_heroic:latest"
 ```
 
-Keep `start_virtual_compositor = true` and the Steam runner's existing name/home. Use a Heroic runner name and its own persistent home. Preserve retired homes/libraries as data rather than pretending their Wine prefixes and settings are a Heroic configuration. Do not silently weaken host user-namespace or sandbox policy to make a game launch. Steam accepts simple `STEAM_STARTUP_FLAGS` without shell evaluation. These images always use nested Sway.
+Keep `start_virtual_compositor = true` and the Steam runner's existing name/home. Use a Heroic runner name and its own persistent home. Preserve retired homes/libraries as data rather than pretending their Wine prefixes and settings are a Heroic configuration. Do not silently weaken host user-namespace or sandbox policy to make a game launch. Steam accepts simple `STEAM_STARTUP_FLAGS` without shell evaluation. These images use nested Sway by default; the Steam runner may select gamescope with `RUN_GAMESCOPE=1`.
 
 For de novo deployments, test both images with the exact Wolf runtime: first login/download, Steam/Proton and Heroic GOG games, 32/64-bit Intel rendering, sound, keyboard/mouse/controller including hotplug, library persistence, normal exit, reconnect and idle cleanup. Retain prior configuration and back up state first. Source checks and fake-app session probes do not establish this acceptance.
 

@@ -15,6 +15,8 @@ def static():
     manifest = json.loads(Path("/licenses/manifest.json").read_text())
     if manifest.get("version") != 2:
         raise ValueError("missing resolved input lock")
+    # Supervised helper shipped beside Wolf; a syntax error must fail the build.
+    compile(Path("/app/wolf-session-idle.py").read_text(), "/app/wolf-session-idle.py", "exec")
     problems = []
     for path in [Path("/wolf/wolf"), Path("/wolf/fake-udev"), *Path("/opt/wolf-runtime/lib").rglob("*.so*")]:
         if path.is_symlink() or not path.is_file(): continue

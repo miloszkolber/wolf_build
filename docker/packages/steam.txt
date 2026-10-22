@@ -1,1 +1,2 @@
 steam-installer network-manager dbus-system-bus-common util-linux
+gamescope

@@ -45,9 +45,14 @@ COPY --from=build /opt/wolf-runtime/ /opt/wolf-runtime/
 COPY --from=build /wolf/ /wolf/
 COPY --from=build /sources/wolf/docker/startup.sh /startup.sh
 COPY --from=build /sources/wolf/docker/supervisord.conf /etc/supervisord.conf
+COPY docker/runtime/wolf-session-idle.conf /etc/supervisor/conf.d/wolf-session-idle.conf
+# Session idle stop lives beside Wolf in the same supervisor; keep upstream's
+# supervisord.conf untouched and pull our program in through its include list.
+RUN printf '\n[include]\nfiles = /etc/supervisor/conf.d/*.conf\n' >> /etc/supervisord.conf
 COPY .build/context/licenses/ /licenses/sources/
 COPY .build/context/manifest.json /licenses/manifest.json
 COPY scripts/check-runtime.py /app/check-runtime.py
+COPY scripts/wolf-session-idle.py /app/wolf-session-idle.py
 ENV PATH=/opt/wolf-runtime/bin:$PATH \
     LD_LIBRARY_PATH=/opt/wolf-runtime/lib \
     LIBVA_DRIVERS_PATH=/opt/wolf-runtime/lib/dri LIBVA_DRIVER_NAME=iHD \

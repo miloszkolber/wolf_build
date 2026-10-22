@@ -5,9 +5,10 @@ for executable in sway Xwayland gosu tini dbus-run-session bwrap; do command -v 
 case "$kind" in
 steam)
     command -v steam
+    command -v gamescope
     command -v NetworkManager
     command -v setpriv
-    dpkg-query -W steam-installer steam-libs:i386 network-manager
+    dpkg-query -W steam-installer steam-libs:i386 network-manager gamescope
     ;;
 heroic)
     command -v heroic

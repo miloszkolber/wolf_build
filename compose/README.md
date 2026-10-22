@@ -32,6 +32,6 @@ docker compose --env-file compose/.env -f compose/docker-compose.yaml --profile 
 docker compose --env-file compose/.env -f compose/docker-compose.yaml up -d wolf
 ```
 
-Gate starts runtime on traffic and stops it after idle expiry with no matching application containers. The UDP trigger is dropped for client retry. Runtime readiness requires Docker health and configured TCP listeners. Gate `--health` checks only binary execution. Gate restart can stop the runtime, so do not roll it during a session.
+Gate starts runtime on traffic and stops it after idle expiry with no matching application containers. Wolf stops a stream session after 900 seconds without a client (`WOLF_SESSION_IDLE_TIMEOUT` on the runtime, `0` disables it), so a TV that is switched off ends the application container and the gate's idle stop follows. The UDP trigger is dropped for client retry. Runtime readiness requires Docker health and configured TCP listeners. Gate `--health` checks only binary execution. Gate restart can stop the runtime, so do not roll it during a session.
 
 A host updater may pull/recreate a changed runtime only while runtime and application sessions are stopped. Never attach Watchtower to the runtime or treat new candidate publication as automatic host deployment.

@@ -28,7 +28,7 @@ The runtime and [Steam/Heroic application images](compose/apps.md) are built sep
 
 ## Run and accept
 
-The [Compose example](compose/README.md) pins the published, device-free gate directly in YAML. Its environment file contains only the runner image and host-specific device/group settings. Runtime creation is separate from startup. Production rollout is not part of a build.
+The [Compose example](compose/README.md) pins the published, device-free gate directly in YAML. Its environment file contains only the runner image and host-specific device/group settings. Runtime creation is separate from startup. Production rollout is not part of a build. Wolf stops a session after 900 seconds without a client (`WOLF_SESSION_IDLE_TIMEOUT`, `0` disables it), so a client that disappears ends the application container instead of leaving it running.
 
 An isolated Intel encode probe, without Docker authority or production state, can be run against a completed build:
 

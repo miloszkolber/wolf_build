@@ -34,6 +34,7 @@ services:
     network_mode: host
     environment:
       WOLF_RENDER_NODE: ${WOLF_RENDER_NODE:-/dev/dri/renderD128}
+      WOLF_SESSION_IDLE_TIMEOUT: ${WOLF_SESSION_IDLE_TIMEOUT:-900}
     group_add: ["${RENDER_GID:?Set render device group}"]
     device_cgroup_rules:
       - "c 13:* rmw"

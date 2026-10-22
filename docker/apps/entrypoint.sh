@@ -30,6 +30,11 @@ if [ "$(id -u)" = 0 ]; then
         getent group "$gid" >/dev/null || groupadd -g "$gid" "device-$gid"
         usermod -aG "$(getent group "$gid" | cut -d: -f1)" retro
     done
+    # gamescope carries file capabilities; upstream's base hands it to the
+    # application user before the session starts it unprivileged.
+    if gamescope_bin=$(command -v gamescope); then
+        chown "$PUID:$PGID" "$gamescope_bin"
+    fi
     if [ "$APP_KIND" = steam ] && [ "${1:-}" = /opt/app/launch.sh ]; then
         # A container-private bus lets Big Picture inspect its own network.
         # Keep Docker's addresses/DNS and deny the status daemon network changes.
