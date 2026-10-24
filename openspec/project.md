@@ -8,7 +8,7 @@
 | Universal gate | `llama_build` | Existing `ghcr.io/miloszkolber/gate` image |
 | Deployment example | This repository | `compose/docker-compose.yaml` and `compose/.env.example` |
 | Wolf protocol, compositor and application behavior | Games on Whales upstream | Exact resolved sources, not a maintained application fork |
-| Steam and Heroic images | This repository | Minimal `wolf_steam` and `wolf_heroic` candidates, daily package/release updates and dependency inventories |
+| Steam and Heroic images | This repository | Minimal `wolf_steam` and `wolf_heroic` candidates, weekly package/release updates and dependency inventories |
 | Host rollout and acceptance | Deployment owner | Local configuration, state backups and hardware evidence |
 
 The registry owner for the new runtime is configured at publication. Do not create a remote, registry package or credentials as part of planning.

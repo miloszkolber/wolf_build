@@ -36,13 +36,13 @@ LABEL io.wolf-build.input-sha256="${INPUT_SHA256}"
 CMD ["/opt/app/launch.sh"]
 
 FROM common AS heroic
-COPY .build/context/apps/heroic.deb /tmp/heroic.deb
-COPY .build/context/apps/heroic.sha256 /tmp/heroic.sha256
 COPY .build/context/packages/heroic.lock /licenses/application-packages.lock
-RUN cd /tmp && sha256sum -c heroic.sha256 \
-    && bash /install-packages.sh /licenses/application-packages.lock /tmp/heroic.deb \
-    && rm -f /tmp/heroic.deb /tmp/heroic.sha256 /install-packages.sh \
-    && bash /opt/app/trim.sh
+# Bind the verified asset: copying it first would keep the 128 MB deb in an
+# immutable layer even after the installer removes the file.
+RUN --mount=type=bind,source=.build/context/apps,target=/artifact,ro \
+    cd /artifact && sha256sum -c heroic.sha256 \
+    && bash /install-packages.sh /licenses/application-packages.lock /artifact/heroic.deb \
+    && bash /opt/app/trim.sh && rm -f /install-packages.sh
 ENV APP_KIND=heroic
 COPY docker/apps/ /opt/app/
 COPY .build/context/apps/manifest.json /licenses/manifest.json

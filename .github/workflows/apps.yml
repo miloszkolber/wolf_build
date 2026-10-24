@@ -6,7 +6,7 @@ on:
   pull_request:
     paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   schedule:
-    - cron: '30 3 * * *'
+    - cron: '30 3 * * 1'
   workflow_dispatch:
 permissions:
   contents: read
