@@ -18,6 +18,12 @@ Unit checks and hosted builds cover launcher argument construction, session even
 
 The repaired runtime was also exercised without production state or Docker authority: stop the observer, create a synthetic session, restart the observer and confirm the unknown existing session survives beyond the short test timeout. Then pause the session and confirm the observer stops it through the API. This reproduces the unsafe startup condition rather than merely asserting a mocked deadline.
 
+## Operator feedback
+
+- 2026-10-24: the Steam Big Picture menu over a running game works flawlessly with Gamescope. This closes the compositor reason for the change; game input, Heroic gameplay, audio and a real idle expiry remain separate checks.
+- EMSS audio still crackles or stutters on the TV client. The runtime audio pipeline logged no underruns or read errors, and the client's WebAudio backend works. Treat EMSS as a Tizen-client backend concern; no runtime audio change is justified by this evidence.
+- The runtime observed after testing was the operator's live TV session, not a leftover: the gate stopped it after the test runs, then the TV connected and resumed the session. A client that remains connected while its screen is off cannot be distinguished server-side; only a control disconnect starts the idle timer, and a reconnect clears it.
+
 ## Executed checks
 
 - Revision `75b66d2`: 68 unit tests, `check-docs.mjs`, pinned strict OpenSpec validation and `git diff --check` passed in the development container. Launcher tests cover Steam `-e`, ordinary Heroic composition and refresh validation. Observer tests reject startup seeding of unknown connection state.
