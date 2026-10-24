@@ -14,6 +14,7 @@ heroic)
     command -v lspci
     command -v curl
     command -v python3
+    command -v xz
     dpkg-query -W heroic
     closure=$(ldd /opt/Heroic/heroic)
     if grep -q 'not found' <<< "$closure"; then printf '%s\n' "$closure" >&2; exit 1; fi

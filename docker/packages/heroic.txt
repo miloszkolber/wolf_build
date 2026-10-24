@@ -1,1 +1,1 @@
-curl unzip pciutils xdg-user-dirs python3
+curl unzip xz-utils pciutils xdg-user-dirs python3
