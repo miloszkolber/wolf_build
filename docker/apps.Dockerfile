@@ -15,7 +15,7 @@ RUN dpkg --add-architecture i386 \
     && bash /opt/app/trim.sh
 ENV HOME=/home/retro UNAME=retro PUID=1000 PGID=1000 \
     XDG_RUNTIME_DIR=/run/user/1000 LANG=en_US.UTF-8 \
-    WLR_BACKENDS=wayland WLR_LIBINPUT_NO_DEVICES=1 PATH=/usr/games:$PATH
+    WLR_BACKENDS=wayland WLR_LIBINPUT_NO_DEVICES=1 RUN_GAMESCOPE=1 PATH=/usr/games:$PATH
 ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/opt/app/entrypoint.sh"]
 
 FROM common AS steam

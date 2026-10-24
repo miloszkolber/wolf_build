@@ -13,9 +13,9 @@ The runtime SHALL stop a stream session whose Moonlight client has been gone lon
 - **WHEN** the same client resumes before the interval expires
 - **THEN** the pending stop is cancelled and the session continues without restarting the runner
 
-#### Scenario: Restored session without a client
-- **WHEN** the runtime starts and restores a paused session that no client resumes
-- **THEN** the session receives the same deadline and is stopped without an application session left running
+#### Scenario: Observer starts after a client connects
+- **WHEN** a session exists before the event subscription begins and its connection state is unknown
+- **THEN** the watcher does not invent an idle deadline for that session
 
 #### Scenario: Disabled
 - **WHEN** `WOLF_SESSION_IDLE_TIMEOUT` is zero

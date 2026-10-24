@@ -11,7 +11,6 @@ import json
 import os
 import select
 import socket
-import sys
 import time
 from pathlib import Path
 
@@ -21,9 +20,6 @@ STOP = "StopStreamEvent"
 CREATED = "StreamSession"
 RETRY_SECONDS = 60
 RETRIES = 3
-# A session restored at runtime start may be paused with no client; seed its
-# deadline only when Wolf itself just started, never after a watcher-only restart.
-WOLF_YOUNG_SECONDS = 60
 
 
 def log(message):
@@ -63,9 +59,6 @@ class IdleSessions:
             self.attempts.pop(session, None)
         elif name == CREATED:
             self.deadlines.setdefault(session, now + self.timeout)
-
-    def arm(self, session, now):
-        self.deadlines.setdefault(str(session), now + self.timeout)
 
     def forget(self, session):
         self.deadlines.pop(str(session), None)
@@ -118,7 +111,11 @@ class EventLines:
 def connect(socket_path, timeout=5):
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(timeout)
-    sock.connect(socket_path)
+    try:
+        sock.connect(socket_path)
+    except OSError:
+        sock.close()
+        raise
     return sock
 
 
@@ -146,26 +143,22 @@ def request(socket_path, method, path, body=b"", headers=()):
 
 def open_events(socket_path):
     sock = connect(socket_path, timeout=30)
-    sock.sendall(b"GET /api/v1/events HTTP/1.1\r\nHost: localhost\r\nAccept: text/event-stream\r\n\r\n")
-    raw = b""
-    while b"\r\n\r\n" not in raw:
-        data = sock.recv(4096)
-        if not data:
-            raise OSError("API closed during event subscription")
-        raw += data
-    head, _, rest = raw.partition(b"\r\n\r\n")
-    if b" 200 " not in head.split(b"\r\n")[0]:
-        raise OSError("event subscription rejected")
+    try:
+        sock.sendall(b"GET /api/v1/events HTTP/1.1\r\nHost: localhost\r\nAccept: text/event-stream\r\n\r\n")
+        raw = b""
+        while b"\r\n\r\n" not in raw:
+            data = sock.recv(4096)
+            if not data:
+                raise OSError("API closed during event subscription")
+            raw += data
+        head, _, rest = raw.partition(b"\r\n\r\n")
+        if b" 200 " not in head.split(b"\r\n")[0]:
+            raise OSError("event subscription rejected")
+    except OSError:
+        sock.close()
+        raise
     sock.settimeout(None)
     return sock, rest
-
-
-def sessions(socket_path):
-    code, payload = request(socket_path, "GET", "/api/v1/sessions")
-    if code != 200:
-        raise OSError(f"session list returned {code}")
-    entries = json.loads(payload).get("sessions", [])
-    return [str(entry["client_id"]) for entry in entries if entry.get("client_id")]
 
 
 def stop(socket_path, session):
@@ -174,30 +167,12 @@ def stop(socket_path, session):
     return code == 200
 
 
-def wolf_age():
-    """Seconds since the Wolf process started, or None when it is not running."""
-    ticks = os.sysconf("SC_CLK_TCK")
-    uptime = float(Path("/proc/uptime").read_text().split()[0])
-    for entry in Path("/proc").iterdir():
-        if not entry.name.isdigit():
-            continue
-        try:
-            if (entry / "comm").read_text().strip() != "wolf":
-                continue
-            stat = (entry / "stat").read_text().rsplit(") ", 1)[1].split()
-            return uptime - int(stat[19]) / ticks
-        except (OSError, IndexError, ValueError):
-            continue
-    return None
-
-
 def run(socket_path, timeout):
     if timeout <= 0:
         log("disabled by WOLF_SESSION_IDLE_TIMEOUT=0")
         while True:
             time.sleep(3600)
     state = IdleSessions(timeout)
-    seeded = False
     while True:
         try:
             sock, rest = open_events(socket_path)
@@ -207,29 +182,19 @@ def run(socket_path, timeout):
             continue
         log(f"watching Wolf events at {socket_path}; idle timeout {timeout}s")
         try:
-            if not seeded:
-                age = wolf_age()
-                if age is not None and age <= WOLF_YOUNG_SECONDS:
-                    try:
-                        for session in sessions(socket_path):
-                            state.arm(session, time.time())
-                        seeded = True
-                    except (OSError, ValueError) as error:
-                        log(f"session list failed: {error}")
-                elif age is not None:
-                    seeded = True
-            else:
-                # A dropped stream can hide a resume; never stop on incomplete
-                # information, accept that the next pause re-arms the deadline.
-                state.clear()
+            # The session list has no connected/paused field. Seeding every
+            # listed session can stop a live game whose resume preceded our
+            # subscription. Only observed creation/pause events arm deadlines.
+            # A gap can hide a resume, so reconnect deliberately fails open.
+            state.clear()
             reader = EventLines()
             for name, data in reader.feed(rest):
                 try:
-                    state.events(name, json.loads(data), time.time())
+                    state.events(name, json.loads(data), time.monotonic())
                 except ValueError:
                     continue
             while True:
-                now = time.time()
+                now = time.monotonic()
                 wait = 30.0
                 if state.deadlines:
                     wait = min(wait, max(0.1, min(state.deadlines.values()) - now))
@@ -240,15 +205,15 @@ def run(socket_path, timeout):
                         raise ConnectionError("event stream closed")
                     for name, data in reader.feed(chunk):
                         try:
-                            state.events(name, json.loads(data), time.time())
+                            state.events(name, json.loads(data), time.monotonic())
                         except ValueError:
                             continue
-                for session in state.due(time.time()):
+                for session in state.due(time.monotonic()):
                     if stop(socket_path, session):
                         log(f"stopped session {session} after {timeout}s without a client")
                         state.forget(session)
                     else:
-                        state.retry(session, time.time())
+                        state.retry(session, time.monotonic())
         except (OSError, ConnectionError) as error:
             log(f"event stream interrupted: {error}")
         finally:

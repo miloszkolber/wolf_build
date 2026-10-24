@@ -8,8 +8,8 @@ The Steam image also lost the Big Picture menu over a running game when it moved
 
 ## What changes
 
-- Add a supervised watcher beside Wolf in the runtime image. It follows Wolf's event stream, arms a deadline when a session pauses, clears it on resume or stop, and calls Wolf's session stop endpoint after `WOLF_SESSION_IDLE_TIMEOUT` seconds. A value of `0` disables it. The watcher seeds sessions restored at runtime start so a paused session cannot be resurrected without a client, and clears deadlines when its event stream is interrupted rather than stopping on incomplete information.
-- Add gamescope to the Steam target and honor `RUN_GAMESCOPE` in the shared launcher. Sway stays the default for both applications; Heroic rejects the request because it does not install gamescope.
+- Add a supervised watcher beside Wolf in the runtime image. It follows Wolf's event stream, arms a deadline when a session is created or pauses, clears it on resume or stop, and calls Wolf's session stop endpoint after `WOLF_SESSION_IDLE_TIMEOUT` seconds. A value of `0` disables it. It never seeds existing sessions from the session list because the list does not distinguish connected and paused sessions. A subscription interruption clears deadlines rather than risking termination after a missed resume. An unobserved pause during a subscription gap can therefore remain running until another observed pause or explicit quit.
+- Make Gamescope the default in both targets, with explicit Sway fallback. Steam enables Gamescope's Steam integration and uses its Xwayland display. Heroic uses ordinary Gamescope composition.
 - Document the timeout and the compositor choice in the consuming examples.
 
 ## Capabilities

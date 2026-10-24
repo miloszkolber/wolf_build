@@ -6,13 +6,14 @@ width=${GAMESCOPE_WIDTH:-1920}; height=${GAMESCOPE_HEIGHT:-1080}
 [[ $width =~ ^[0-9]+$ && $height =~ ^[0-9]+$ ]] || exit 1
 
 if [ -n "${RUN_GAMESCOPE:-}" ]; then
-    # Steam's Big Picture menu is a surface inside the Steam window. A tiling
-    # compositor hides that window behind a fullscreen game, while gamescope
-    # composites Steam and the game in one session. Steam carries gamescope;
-    # other applications reject the request instead of silently using Sway.
     command -v gamescope >/dev/null || { echo 'gamescope requested but not installed' >&2; exit 1; }
+    refresh=${GAMESCOPE_REFRESH:-60}
+    [[ $refresh =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid Gamescope refresh rate' >&2; exit 1; }
+    integration=()
+    # Upstream Steam uses gamescope's Steam-aware focus/overlay composition.
+    if [ "$APP_KIND" = steam ]; then integration=(-e); fi
     export XDG_CURRENT_DESKTOP=gamescope XDG_SESSION_TYPE=wayland
-    exec dbus-run-session -- gamescope -b -W "$width" -H "$height" -r "${GAMESCOPE_REFRESH:-60}" -C 3000 -- /opt/app/run.sh
+    exec dbus-run-session -- gamescope "${integration[@]}" -b -W "$width" -H "$height" -r "$refresh" -C 3000 -- /opt/app/run.sh
 fi
 
 export SWAYSOCK="$XDG_RUNTIME_DIR/app-sway.sock"

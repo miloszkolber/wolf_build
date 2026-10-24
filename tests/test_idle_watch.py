@@ -99,14 +99,6 @@ class FakeApi:
 
 
 class ApiTransportTests(unittest.TestCase):
-    def test_session_list_reads_client_ids(self):
-        body = json.dumps({"success": True, "sessions": [{"client_id": "7"}, {"client_ip": "x"}]}).encode()
-        api = FakeApi([(200, body)])
-        try:
-            self.assertEqual(idle.sessions(api.path), ["7"])
-        finally:
-            api.close()
-
     def test_stop_posts_the_session_id(self):
         api = FakeApi([(200, b'{"success":true}')])
         try:
@@ -123,10 +115,20 @@ class ApiTransportTests(unittest.TestCase):
             api.close()
 
 
-class WolfAgeTests(unittest.TestCase):
-    def test_reports_none_without_a_wolf_process(self):
-        with patch.object(idle.Path, "iterdir", return_value=[]):
-            self.assertIsNone(idle.wolf_age())
+class SubscriptionSafetyTests(unittest.TestCase):
+    def test_startup_never_arms_existing_sessions_with_unknown_connection_state(self):
+        # Wolf's list cannot distinguish active from paused. Starting the
+        # observer after a client's Resume event must not kill that live game.
+        class EndProbe(Exception):
+            pass
+        sock = unittest.mock.Mock()
+        with patch.object(idle, "open_events", return_value=(sock, b"")), \
+             patch.object(idle.select, "select", side_effect=EndProbe), \
+             patch.object(idle, "request") as request:
+            with self.assertRaises(EndProbe):
+                idle.run("unused", 900)
+            request.assert_not_called()
+            sock.close.assert_called_once()
 
 
 if __name__ == "__main__":

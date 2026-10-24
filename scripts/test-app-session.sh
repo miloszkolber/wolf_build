@@ -51,7 +51,7 @@ docker volume create "$volume" >/dev/null
 for run in 0 1; do
     timeout 45s docker run --rm --name "$container" --network none \
         -v "$volume:/home/retro" -e SECOND_RUN="$run" -e PUID=1234 -e PGID=1235 \
-        -e WAYLAND_DISPLAY=unused -e PULSE_SERVER=unix:/run/user/1000/test-pulse \
+        -e RUN_GAMESCOPE= -e WAYLAND_DISPLAY=unused -e PULSE_SERVER=unix:/run/user/1000/test-pulse \
         -e WLR_BACKENDS=headless -e WLR_RENDERER=pixman "$probe" > "$temp/session.log" 2>&1 || {
         cat "$temp/session.log" >&2; exit 1;
     }
@@ -73,7 +73,7 @@ if [ "$ready" != true ]; then docker logs "$parent" >&2; exit 1; fi
 docker exec "$parent" sh -ec 'chown 0:0 /parent/wayland-1; chmod 600 /parent/wayland-1'
 timeout 45s docker run --rm --name "$container" --network none \
     -v "$volume:/home/retro" -v "$parent_volume:/parent" \
-    -e PUID=1234 -e PGID=1235 -e SECOND_RUN=1 \
+    -e RUN_GAMESCOPE= -e PUID=1234 -e PGID=1235 -e SECOND_RUN=1 \
     -e WAYLAND_DISPLAY=/parent/wayland-1 -e WLR_BACKENDS=wayland -e WLR_RENDERER=pixman \
     -e PULSE_SERVER=unix:/run/user/1000/test-pulse "$probe" > "$temp/nested.log" 2>&1 || {
     cat "$temp/nested.log" >&2; exit 1;

@@ -1,5 +1,5 @@
 ca-certificates bash tini gosu passwd dbus-daemon
-sway xwayland x11-utils xauth xdg-utils fonts-dejavu-core locales
+sway gamescope xwayland x11-utils xauth xdg-utils fonts-dejavu-core locales
 bubblewrap libudev1 libinput10 libevdev2 libnss3
 libgl1-mesa-dri:amd64 libgl1-mesa-dri:i386
 mesa-vulkan-drivers:amd64 mesa-vulkan-drivers:i386

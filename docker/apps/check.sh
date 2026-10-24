@@ -1,11 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 kind=${1:?steam or heroic}
-for executable in sway Xwayland gosu tini dbus-run-session bwrap; do command -v "$executable"; done
+for executable in sway gamescope Xwayland gosu tini dbus-run-session bwrap; do command -v "$executable"; done
 case "$kind" in
 steam)
     command -v steam
-    command -v gamescope
     command -v NetworkManager
     command -v setpriv
     dpkg-query -W steam-installer steam-libs:i386 network-manager gamescope
