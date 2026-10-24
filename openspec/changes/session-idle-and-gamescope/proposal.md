@@ -1,4 +1,4 @@
-# Session idle stop and gamescope for the Steam image
+# Session idle stop and Gamescope for both application images
 
 ## Why
 
