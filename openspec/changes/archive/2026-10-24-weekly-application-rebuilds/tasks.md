@@ -9,8 +9,8 @@
 ## 2. Checks
 
 - [x] 2.1 Documentation rules and strict OpenSpec validation pass in the development container.
-- [ ] 2.2 The triggered application run passes resolution, build, final-image, vulnerability and SBOM checks for a changed recipe.
+- [x] 2.2 The triggered application run (`40126966154`) passed resolution, build, final-image, vulnerability and SBOM checks for the changed recipe.
 
 ## 3. Delivery
 
-- [ ] 3.1 Confirm the weekly schedule is visible in the workflow and the next scheduled run is Monday UTC.
+- [x] 3.1 The workflow schedule is `30 3 * * 1`, the next scheduled application run is Monday 03:30 UTC, and the push run passed.

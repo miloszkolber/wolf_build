@@ -17,10 +17,10 @@ The repository SHALL build Steam and Heroic application images independently of 
 
 ### Requirement: Regular tracked application updates
 
-Application builds SHALL evaluate base, application and package dependencies daily and record exact selected artifacts and package closures before publication. Each application SHALL have its own identity without calendar refresh salts or an unrelated application's upstream release.
+Application builds SHALL evaluate base, application and package dependencies weekly and record exact selected artifacts and package closures before publication. Each application SHALL have its own identity without calendar refresh salts or an unrelated application's upstream release.
 
 #### Scenario: Upstream or package update
-- **WHEN** daily discovery or a source change triggers application assembly
+- **WHEN** weekly discovery or a source change triggers application assembly
 - **THEN** the candidate resolves the supported base digest and stable Heroic release asset with a checked upstream SHA256, and refreshes signed distribution packages
 - **AND** the candidate includes recipe identity, package inventory, SBOM and vulnerability results
 - **AND** Steam client, Proton and game downloads in user state are distinguished from immutable image dependencies
