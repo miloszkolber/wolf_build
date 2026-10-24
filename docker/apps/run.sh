@@ -15,7 +15,10 @@ steam)
     ;;
 heroic)
     # Heroic manages GOG acquisition and its own GE-Proton/UMU runners.
-    heroic --console --fullscreen
+    # Hosts that restrict unprivileged user namespaces (Ubuntu's AppArmor
+    # default) deny Electron's zygote namespace; the container remains the
+    # isolation boundary for this application.
+    heroic --console --fullscreen --no-sandbox
     ;;
 *) echo 'Unsupported application' >&2; exit 1 ;;
 esac
