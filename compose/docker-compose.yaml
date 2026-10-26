@@ -1,7 +1,7 @@
 name: wolf
 services:
   wolf:
-    image: ghcr.io/miloszkolber/gate:d2f678bec2f5@sha256:cb14c151aabacd0e979951a94abcd9c05af67e79bbbe0e1b16deb7d9a5f0d401
+    image: ghcr.io/miloszkolber/gate:e5d62a041306@sha256:803d36eda9789db2ba88f0420222d76e71d232e89f55ab92b5f742981c4dbfcc
     container_name: wolf
     restart: always
     network_mode: host
@@ -14,6 +14,8 @@ services:
       GATE_TCP_PORTS: 47984,47989,48010
       GATE_UDP_PORTS: 47999,48100,48200
       GATE_ACTIVITY_PREFIXES: wolf-,wolf_,wolf
+      GATE_DISCOVERY_PORT: 47989
+      GATE_DISCOVERY_PATHS: /serverinfo
       IDLE_TIMEOUT: 300
       STARTUP_TIMEOUT: 90
       CONNECTION_IDLE_TIMEOUT: 600
