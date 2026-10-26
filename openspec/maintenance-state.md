@@ -45,13 +45,16 @@ The 2026-10-19 review held Wolf at the same source commit and recorded GStreamer
 
 ## Executed checks
 
-- Unit tests, `check-docs.mjs`, strict OpenSpec validation, actionlint and Compose configuration validation run in the development container.
+- 68 unit tests, `check-docs.mjs` (30 Markdown files), strict OpenSpec validation, actionlint 1.7.12 and Compose configuration validation pass in the development container.
 - The adopted gate digest was pulled and executed with `--health` (exit 0), and a bounded startup probe with the example's port-handoff and discovery settings in an isolated network namespace accepted the settings and then failed only on the absent Docker socket, as designed. The discovery-cache behaviour itself was verified by the gate owner, not repeated here.
-- CI evidence for the current identities: runtime run `40174674780` (2026-10-25 scheduled reuse, checks and same-digest `latest`) and application run `40128732987` (2026-10-24 rebuild and publication).
+- Pushed revision `a74461a`. Documentation run `40272998320` passed. Runtime run `40272998340` reused the unchanged immutable image, repeated its checks and republished `latest` at the same digest; its first two attempts failed only because the Trivy vulnerability DB download from `mirror.gcr.io` returned a 404 for one layer, and the retry passed the SBOM and HIGH/CRITICAL gates. `latest` and `stable-6a5053b4ebbb-33bf3cfe73a6` both resolve to `sha256:cc6ce1f93d1b3aa90252536546ddb2deb93d87558566e652403516466c2b9e19` afterwards.
+- Earlier CI evidence for the same identities: runtime run `40174674780` (2026-10-25 scheduled reuse) and application run `40128732987` (2026-10-24 rebuild and publication).
 
 ## Failed or inaccessible
 
-- No source was unreachable this run. GitHub security advisories for Wolf, the compositor, interpipe, Heroic and the Intel components are empty, which is coverage by absence of publications, not a security audit.
+- The Trivy vulnerability DB download failed twice on 2026-10-26 with a 404 from the `mirror.gcr.io` artifact cache, then succeeded on retry and in a standalone `--download-db-only` run. This was an external mirror failure, not a finding in the image.
+- No source was unreachable. GitHub security advisories for Wolf, the compositor, interpipe, Heroic and the Intel components are empty, which is coverage by absence of publications, not a security audit.
+- The weekly application schedule had not started when this review finished, so its 2026-10-26 result was not observed.
 
 ## Not covered by this review
 
