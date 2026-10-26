@@ -21,7 +21,7 @@ Modified capability is `intel-runtime`.
 
 ## Status and authority
 
-Proposal only. Prepared by the 2026-10-26 dependency review and held for operator authorization because it changes the media stack. No source, recipe or workflow change is made before that decision.
+Proposal only, authorized and merged on 2026-10-26. The operator accepted the media-stack change; the implementation tasks, build evidence and session acceptance are still open, and no source, recipe or workflow change is made until they are executed and reviewed. The change stays active until it is delivered and verified, then archives into the implemented contract.
 
 ## Dependencies and consequential unknowns
 
