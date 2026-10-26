@@ -48,3 +48,9 @@ The local image measured 270,749,751 bytes uncompressed against 343,062,643 for 
 ## Advisory status after the change
 
 `1.28.8` carries the fixes named by the advisories published through 2026-10-08 for core, base, good, bad and ugly. No advisory published after that cutoff was reviewed for this change, and the distribution-only scan still does not cover the source-built stack. The next maintenance review must compare any newer advisory against `1.28.8` and move to a later 1.28 patch if one exists.
+
+## Canonical publication and rollout, 2026-10-26
+
+Runtime run `40413731495` passed for `a527a98`, including the final-image static check, the real supervisor/Pulse-failure probe, the shared-database SBOM and HIGH/CRITICAL gates and publication of immutable `stable-6a5053b4ebbb-37a8544b5803` with the same digest as `latest` (`sha256:012a58579ecb3f131951247f17ba580133260e012a3bf1d0580072022f456bb6`). The pulled canonical image reports GStreamer `1.28.8`, the 41,473,712-byte stripped media driver, and passes the static and supervisor checks again. Its isolated probe on the host Arc passed VA encoding for h264, hevc and av1.
+
+With no sessions or application containers active, the runtime alone was recreated from the canonical digest. Gate started it on control traffic; Docker health passed, Pulse answered, all four supervised components ran, and VA with zero-copy used the Arc by-path node. This verifies the image and its runtime wiring, not a Moonlight game session; the real TV acceptance in task 3.3 remains open.

@@ -38,9 +38,9 @@ The 2026-10-19 review held Wolf at the same source commit and recorded GStreamer
 
 ## Rollback references
 
-- Current checked runtime digest: `sha256:cc6ce1f93d1b3aa90252536546ddb2deb93d87558566e652403516466c2b9e19`.
+- Current checked runtime digest: `sha256:012a58579ecb3f131951247f17ba580133260e012a3bf1d0580072022f456bb6` (GStreamer 1.28.8 series change, source `a527a98`).
 - Previous accepted runtime digest: `sha256:0ee580beef1791d3430ee7e838fce3dbf2543a480ab66be1433377ebe5e7bcc6`.
-- Current checked application digests: `sha256:c270e8e308541f455a74c6813c33bb653ac531ea70c0b98df72341b2a7952f47` (Steam) and `sha256:2ad590f25f04dae0c379f0946b314e453138674ccb60bfe9d9838217201f7da0` (Heroic).
+- Current checked application digests: `sha256:ea70280fbb6917826a2ae28b100596b5a457126859c06416c46d7d15863390b9` (Steam, tag `78b399b2b778387f`) and `sha256:b14422be1a3ccdcb96f404119e1405ce5fa40f6955a29f9543b82b2e1bbea1f3` (Heroic, tag `c820849602e70256`).
 - Previous accepted application digests: `sha256:f740f07ccab89f1b8e35c5346bcf822c02b65ec33d59bbd9683817c173d24d49` (Steam) and `sha256:bf936df731939e4bebd965a5f72fad0fcb71a7a6ac1379485a98320eaef15e32` (Heroic).
 - Gate rollback pin: `d2f678bec2f5` = `sha256:cb14c151aabacd0e979951a94abcd9c05af67e79bbbe0e1b16deb7d9a5f0d401`, registry availability rechecked this run.
 

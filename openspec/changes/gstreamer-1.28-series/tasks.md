@@ -15,5 +15,5 @@
 ## 3. Acceptance and publication
 
 - [x] 3.1 Obtain operator authorization for the media stack change before merging.
-- [ ] 3.2 Publish the changed-input candidate and observe its checks and immutable tag.
+- [x] 3.2 Publish the changed-input candidate and observe its checks and immutable tag.
 - [ ] 3.3 Obtain one real TV session record for capture, audio, input and idle stop. Publication is not acceptance.
