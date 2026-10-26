@@ -42,8 +42,8 @@ services:
       - "c 13:* rmw"
       - "c ${HIDRAW_MAJOR:?Read the hidraw major from the target kernel}:* rmw"
     devices:
-      - "${DRI_CARD:-/dev/dri/card0}:${DRI_CARD:-/dev/dri/card0}"
-      - "${WOLF_RENDER_NODE:-/dev/dri/renderD128}:${WOLF_RENDER_NODE:-/dev/dri/renderD128}"
+      # Enumerate current DRM nodes on each container start, not stale numbers.
+      - /dev/dri:/dev/dri
       - /dev/uinput
       - /dev/uhid
     volumes:

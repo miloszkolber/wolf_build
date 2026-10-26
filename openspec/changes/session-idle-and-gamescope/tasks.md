@@ -28,3 +28,10 @@
 - [x] 4.2 Run 68 unit tests and strict documentation/OpenSpec validation in the development container. Launcher tests check Steam integration, Heroic composition and invalid refresh rejection. Observer tests reject startup assumptions about existing sessions.
 - [x] 4.3 Publish and deploy the repaired runtime and both Gamescope application images. Hosted runs `40111183659`, `40111183876`, `40111931209` and `40111931204` passed. Both actual apps launched through Wolf with Gamescope. The isolated runtime preserved a pre-existing session across observer startup and expired it after an observed pause. Unit tests cover resume cancellation and CI checks explicit Sway fallback. Real Moonlight acceptance remains separate.
 - [x] 4.4 Remove superseded local images, diagnostic dumps, scratch artifacts and unused launcher remnants. Preserve pairing, launcher state, libraries and saves. Deployment-specific inventory and checks belong to the deployment runbook.
+
+## 5. Game audio and deployment repairs
+
+- [x] 5.1 Route the shared application images' default ALSA PCM/control to the session Pulse server. Verify real 32-bit and 64-bit playback reaches a session sink monitor, and make the check a publication prerequisite.
+- [x] 5.2 Retain Pulse diagnostics, require a responsive audio server for runtime health and shut down the runtime coherently when embedded Pulse exits. Verify the actual supervisor failure path without production state or GPU access.
+- [x] 5.3 Correct the DRM example and document startup versus live-reset guarantees. Repair deployed application hidraw rules using the current kernel major without changing controller selection or persistent game settings.
+- [ ] 5.4 Run repository checks, publish checked images and apply an authorized idle rollout. Record image checks separately from affected-game and audible Moonlight acceptance.

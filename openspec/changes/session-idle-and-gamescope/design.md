@@ -24,7 +24,17 @@ The repaired runtime was also exercised without production state or Docker autho
 - EMSS audio still crackles or stutters on the TV client. The runtime audio pipeline logged no underruns or read errors, and the client's WebAudio backend works. Treat EMSS as a Tizen-client backend concern; no runtime audio change is justified by this evidence.
 - The runtime observed after testing was the operator's live TV session, not a leftover: the gate stopped it after the test runs, then the TV connected and resumed the session. A client that remains connected while its screen is off cannot be distinguished server-side; only a control disconnect starts the idle timer, and a reconnect clears it.
 
+## Game-audio review follow-up
+
+The application images installed both Pulse plugin ABIs but left the ALSA default override as an inactive example. A final-image probe reproduced default PCM failure while explicit Pulse PCM succeeded against the same isolated server. The shared image now supplies `/etc/asound.conf`. Publication checks both real client ABIs against a private session sink and verifies non-silent monitor samples, without installing development packages into the client under test.
+
+Embedded Pulse recovery uses coordinated runtime shutdown, not a second independent restart. Pulse exit destroys virtual sinks and the pinned Wolf context does not rebuild its routing subscription. Supervisor therefore retains diagnostics and sends Wolf its normal stop signal before ending the runtime. This intentionally sacrifices game continuity on a server crash rather than leaving a healthy-looking broken runtime. External Pulse servers remain externally owned. Health queries their availability but does not shut down or restart them.
+
+The deployment example maps the DRM directory and recommends selecting a by-path render identity. It does not promise live GPU-reset recovery or enable a disabled GPU. Per-runner hidraw grants must use the current kernel major independently of the outer runtime's grants.
+
 ## Executed checks
+
+- Audio follow-up: 72 unit tests passed. Disposable overlay images based on the previously deployed Steam/runtime artifacts verified the source repair before publication. `scripts/test-app-audio.sh` checked real default ALSA PCM/control from both ABIs against a selected session sink distinct from the server default and found sustained non-silent monitor samples. The same check rejected the pre-fix Steam image with missing hardware card zero. `scripts/test-runtime-supervision.sh` checked actual startup/supervisor configuration with only the GPU-bound Wolf executable substituted: normal shutdown and killed embedded Pulse both gave Wolf its graceful stop signal, and Pulse was not independently restarted. These probes are not canonical image publication or audible game acceptance.
 
 - Revision `75b66d2`: 68 unit tests, `check-docs.mjs`, pinned strict OpenSpec validation and `git diff --check` passed in the development container. Launcher tests cover Steam `-e`, ordinary Heroic composition and refresh validation. Observer tests reject startup seeding of unknown connection state.
 - Hosted application run `40111183659` and runtime run `40111183876` passed build, final-image checks, vulnerability gates and publication.

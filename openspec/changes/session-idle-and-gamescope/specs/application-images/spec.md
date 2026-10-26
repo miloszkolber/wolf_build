@@ -20,3 +20,11 @@ Both application images SHALL default to Gamescope and SHALL retain an explicit 
 #### Scenario: Explicit fallback
 - **WHEN** `RUN_GAMESCOPE` is explicitly empty
 - **THEN** the application starts under nested Sway
+
+### Requirement: Session audio defaults
+
+Both application images SHALL route the default ALSA playback and control through PulseAudio using Wolf's supplied session server and sink. Image publication SHALL require actual default-ALSA playback from both amd64 and i386 clients reaching an isolated session sink monitor.
+
+#### Scenario: Game uses default ALSA playback
+- **WHEN** a 32-bit or 64-bit application opens the default ALSA PCM with a reachable session Pulse server
+- **THEN** its non-silent samples reach the selected session sink without requiring a host ALSA sound card

@@ -106,7 +106,9 @@ jobs:
           cache-from: type=gha,scope=wolf
           cache-to: type=gha,scope=wolf,mode=max,ignore-error=true
       - name: Verify final runtime without Docker authority or GPU
-        run: docker run --rm --network none --entrypoint python3 wolf-test:local /app/check-runtime.py --static
+        run: |
+          docker run --rm --network none --entrypoint python3 wolf-test:local /app/check-runtime.py --static
+          bash scripts/test-runtime-supervision.sh wolf-test:local
       - name: Export checked image
         run: docker save wolf-test:local -o candidate.tar
       - name: SBOM and vulnerability assessment

@@ -20,3 +20,16 @@ The runtime SHALL stop a stream session whose Moonlight client has been gone lon
 #### Scenario: Disabled
 - **WHEN** `WOLF_SESSION_IDLE_TIMEOUT` is zero
 - **THEN** no session stop is issued and Wolf's existing lifecycle is unchanged
+
+### Requirement: Coherent embedded audio failure
+
+The runtime SHALL retain embedded PulseAudio diagnostics and SHALL shut down coherently through supervisor if the embedded audio process exits or cannot start. It SHALL NOT restart Pulse alone while retaining Wolf's stale connections and virtual-sink state. Runtime health SHALL require a responsive Pulse server in addition to the existing Wolf readiness checks.
+
+#### Scenario: Embedded server exits
+- **WHEN** the embedded PulseAudio process exits while the runtime is active
+- **THEN** supervisor initiates runtime shutdown and Wolf receives its normal graceful stop signal
+- **AND** a subsequent gate request can start a fresh runtime instead of reusing stale audio state
+
+#### Scenario: Audio server is unreachable
+- **WHEN** Wolf is listening but its Pulse server does not answer a bounded query
+- **THEN** the runtime health check fails

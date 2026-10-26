@@ -2,9 +2,9 @@ name: Build applications
 on:
   push:
     branches: [main]
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/test-app-audio.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   pull_request:
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/test-app-audio.sh', 'scripts/resolve.py', 'scripts/publish.py', 'tests/**', '.github/workflows/apps.yml']
   schedule:
     - cron: '30 3 * * 1'
   workflow_dispatch:
@@ -82,6 +82,7 @@ jobs:
           if docker run --rm --network none -e PUID=00 app-test:local id -u; then exit 1; fi
           docker run --rm --network none app-test:local sh -ec 'test "$HOME" = /home/retro; test -w "$HOME"; test "$(id -u)" = 1000'
           bash scripts/test-app-session.sh app-test:local "$APP"
+          bash scripts/test-app-audio.sh app-test:local
           docker image inspect app-test:local --format '{{.Size}}' > image-size.txt
           docker run --rm --network none --entrypoint cat app-test:local /licenses/distribution-packages.txt > packages.txt
           docker save app-test:local -o candidate.tar

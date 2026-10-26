@@ -6,6 +6,8 @@ This repository builds `ghcr.io/<owner>/wolf_steam` and `ghcr.io/<owner>/wolf_he
 
 Both targets use a digest-pinned Ubuntu 26.04 base, Gamescope/Xwayland, a small session D-Bus, non-root application processes and Mesa/ALSA/Pulse client libraries for amd64 and i386. The 32-bit libraries are required by Steam/Proton/Wine. PulseAudio's server remains in Wolf. There is no second audio container, desktop environment, panel, terminal, NVIDIA integration, Decky loader or copied upstream base-app image. Sway remains installed for explicit fallback and device-free CI session checks.
 
+The default ALSA PCM and control use the Pulse plugin through `/etc/asound.conf`, respecting Wolf's `PULSE_SERVER`, `PULSE_SINK` and `PULSE_SOURCE`. Installing plugins alone does not select them as the default. Games must not fall back to a nonexistent host sound card. Publication checks real default-ALSA playback from both ABIs into an isolated session sink monitor. This is not proof of audio in every nested Steam runtime or game.
+
 ## Compositor selection
 
 Gamescope is the default for both applications (`RUN_GAMESCOPE=1` in the image). Steam enables Gamescope's `-e` integration and runs through its Xwayland display, matching upstream's Steam compositor path. Heroic uses ordinary Gamescope composition. The launcher validates the requested binary before starting. Gamescope uses Wolf's `GAMESCOPE_WIDTH`, `GAMESCOPE_HEIGHT` and `GAMESCOPE_REFRESH` values and hides the cursor after three idle seconds. An explicitly empty `RUN_GAMESCOPE=` selects Sway for fallback or device-free probes.
@@ -34,6 +36,8 @@ Each image embeds its resolved base/release/recipe/package manifest and installe
 ## Wolf integration
 
 Wolf creates these application containers, not Compose. It supplies `PUID`, `PGID`, `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY`, Pulse server/sink/source, linked DRM/input devices, fake-udev and the per-user `/home/retro` mount. The entrypoint keeps those paths and groups, changes ownership only on top-level writable directories and the supplied session Wayland socket, then drops privileges before launching the application. It does not recursively rewrite game-library ownership. Nested Sway hides the cursor after inactivity and while typing for couch navigation; gamescope hides it after the same idle delay.
+
+Read the current `hidraw` major from `/proc/devices` and apply it to each runner's `base_create_json.HostConfig.DeviceCgroupRules`, not only the outer runtime's Compose rule. Application containers are siblings, so they do not inherit runtime device grants. Recheck these rules after kernel changes.
 
 The maintained runner references use unpinned `:latest` images and a Heroic runner name with a `heroic-games:/games:rw` shared library:
 

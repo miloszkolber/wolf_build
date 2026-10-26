@@ -17,6 +17,7 @@ def static():
         raise ValueError("missing resolved input lock")
     # Supervised helper shipped beside Wolf; a syntax error must fail the build.
     compile(Path("/app/wolf-session-idle.py").read_text(), "/app/wolf-session-idle.py", "exec")
+    compile(Path("/app/wolf-audio-failure.py").read_text(), "/app/wolf-audio-failure.py", "exec")
     problems = []
     for path in [Path("/wolf/wolf"), Path("/wolf/fake-udev"), *Path("/opt/wolf-runtime/lib").rglob("*.so*")]:
         if path.is_symlink() or not path.is_file(): continue
@@ -84,7 +85,14 @@ def health():
     # it logged a failed transmission on every interval. A completed TCP
     # handshake only proves the kernel accepted it, not that Wolf serves it.
     # Readiness is the listening socket itself, read without a connection.
-    return {47984, 47989, 48010} <= listening_ports()
+    if not {47984, 47989, 48010} <= listening_ports(): return False
+    server = os.environ.get("PULSE_SERVER") or str(Path(os.environ.get("XDG_RUNTIME_DIR", "/run/user/wolf")) / "pulse-socket")
+    try:
+        return subprocess.run(["pactl", "--server", server, "info"],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                              timeout=1, check=False).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
 
 
 def main():

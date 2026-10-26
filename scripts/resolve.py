@@ -375,6 +375,8 @@ RUNTIME_PACKAGING = (
     ".dockerignore",
     "docker/wolf.Dockerfile",
     "docker/runtime/wolf-session-idle.conf",
+    "docker/runtime/wolf-audio-failure.conf",
+    "docker/runtime/configure-supervisor.py",
     "scripts/build-inputs.py",
     "scripts/build.sh",
     "scripts/check-runtime.py",
@@ -389,6 +391,7 @@ RUNTIME_PACKAGING = (
     "scripts/lock-packages.py",
     "scripts/install-packages.sh",
     "scripts/wolf-session-idle.py",
+    "scripts/wolf-audio-failure.py",
     "docker/packages/build.txt",
     "docker/packages/runtime.txt",
 )

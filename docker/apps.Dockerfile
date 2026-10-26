@@ -3,6 +3,7 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE} AS common
 ENV DEBIAN_FRONTEND=noninteractive
 COPY docker/apps/trim.sh /opt/app/trim.sh
+COPY docker/apps/asound.conf /etc/asound.conf
 COPY scripts/install-packages.sh /install-packages.sh
 COPY .build/context/packages/common.lock /package-locks/common.lock
 # Wolf supplies Wayland/Pulse sockets, per-user home and input devices.

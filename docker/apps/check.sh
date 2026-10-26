@@ -28,11 +28,14 @@ for arch in x86_64-linux-gnu i386-linux-gnu; do
     test -e "/usr/lib/$arch/libvulkan_intel.so"
     test -e "/usr/lib/$arch/dri/iris_dri.so"
     test -e "/usr/lib/$arch/libpulse.so.0"
+    test -e "/usr/lib/$arch/alsa-lib/libasound_module_pcm_pulse.so"
+    test -e "/usr/lib/$arch/alsa-lib/libasound_module_ctl_pulse.so"
     for library in "/usr/lib/$arch/libvulkan_intel.so" "/usr/lib/$arch/dri/iris_dri.so"; do
         closure=$(ldd "$library")
         if grep -q 'not found' <<< "$closure"; then printf '%s\n' "$closure" >&2; exit 1; fi
     done
 done
+test -s /etc/asound.conf
 test -z "$(find /usr/share/vulkan/icd.d -type f ! -name 'intel*.json' -print -quit)"
 test ! -e /usr/bin/pebble
 for package in pulseaudio supervisor bluez clang gcc; do
