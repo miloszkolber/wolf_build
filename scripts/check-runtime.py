@@ -15,6 +15,9 @@ def static():
     manifest = json.loads(Path("/licenses/manifest.json").read_text())
     if manifest.get("version") != 2:
         raise ValueError("missing resolved input lock")
+    expected_gstreamer = manifest["inputs"]["gstreamer"]["version"]
+    if f"GStreamer {expected_gstreamer}" not in run("gst-inspect-1.0", "--version").splitlines():
+        raise ValueError("loaded GStreamer differs from the selected source version")
     # Supervised helper shipped beside Wolf; a syntax error must fail the build.
     compile(Path("/app/wolf-session-idle.py").read_text(), "/app/wolf-session-idle.py", "exec")
     compile(Path("/app/wolf-audio-failure.py").read_text(), "/app/wolf-audio-failure.py", "exec")

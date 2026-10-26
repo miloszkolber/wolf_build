@@ -6,10 +6,10 @@ import os
 import re
 import subprocess
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 MANIFEST_VERSION = 1
@@ -27,6 +27,15 @@ COMPOSITOR_PIN = "016b4fc"
 INTERPIPE_REPO = "games-on-whales/gst-interpipe"
 GSTREAMER_DEFAULT = "1.26.7"
 GSTREAMER_SERIES = "1.26"
+# Explicitly reviewed divergence from the held Wolf source. This is an advisory
+# floor, not a calendar refresh salt or a second automatic security scanner.
+GSTREAMER_REVIEW = {
+    "series": "1.28",
+    "minimum_version": "1.28.8",
+    "reviewed_at": "2026-10-26",
+    "advisories_through": "2026-10-08",
+    "reason": "GStreamer 1.26 is unmaintained; reviewed core/plugin advisories require 1.28.8",
+}
 INTEL_MEDIA_REPO = "intel/media-driver"
 INTEL_VPL_REPO = "intel/vpl-gpu-rt"
 INTEL_LIBVPL_REPO = "intel/libvpl"
@@ -44,6 +53,32 @@ def check_gstreamer(version, accepted_series=GSTREAMER_SERIES):
     series = match.group(1) + "." + match.group(2)
     if series != accepted_series:
         raise ValueError("gstreamer series " + series + " is outside the accepted " + accepted_series + " series")
+    return version
+
+
+def gstreamer_policy(declared):
+    match = re.fullmatch(r"(\d+\.\d+)\.\d+", declared or "")
+    if not match:
+        raise ValueError("Wolf does not declare a valid GStreamer version")
+    policy = {"series": match.group(1), "declared_version": declared}
+    if GSTREAMER_REVIEW is not None:
+        review = dict(GSTREAMER_REVIEW)
+        if not {"series", "minimum_version", "reviewed_at", "advisories_through", "reason"} <= review.keys():
+            raise ValueError("GStreamer override needs a dated advisory review and reason")
+        reviewed = date.fromisoformat(review["reviewed_at"])
+        cutoff = date.fromisoformat(review["advisories_through"])
+        if reviewed < cutoff or reviewed > date.today() or not review["reason"].strip():
+            raise ValueError("GStreamer override needs a dated advisory review and reason")
+        check_gstreamer(review["minimum_version"], review["series"])
+        policy.update(series=review["series"], review=review)
+    return policy
+
+
+def check_gstreamer_policy(version, policy):
+    check_gstreamer(version, policy["series"])
+    minimum = policy.get("review", {}).get("minimum_version")
+    if minimum and tuple(map(int, version.split("."))) < tuple(map(int, minimum.split("."))):
+        raise ValueError("GStreamer version predates the reviewed advisory floor " + minimum)
     return version
 
 
@@ -118,22 +153,37 @@ def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, m
     }
 
 
+def fetch(request, timeout=30):
+    """Bound and retry small upstream metadata reads, never missing artifacts."""
+    for attempt in range(3):
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                return response.read()
+        except HTTPError as err:
+            if err.code not in {429, 500, 502, 503, 504} or attempt == 2:
+                raise
+        except (URLError, TimeoutError, ConnectionError):
+            if attempt == 2:
+                raise
+        time.sleep(2 ** attempt)
+
+
 def github_api(path):
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "wolf_build"}
     if os.getenv("GH_TOKEN"):
         headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
-    for attempt in range(3):
-        try:
-            with urlopen(Request("https://api.github.com/" + path, headers=headers), timeout=30) as response:
-                return json.load(response)
-        except HTTPError as err:
-            if err.code not in {429, 500, 502, 503, 504} or attempt == 2:
-                raise
-            time.sleep(2 ** attempt)
+    return json.loads(fetch(Request("https://api.github.com/" + path, headers=headers)))
 
 
 def git_ls_remote(url, *refs):
-    out = subprocess.check_output(["git", "ls-remote", url, *refs], text=True)
+    for attempt in range(3):
+        try:
+            out = subprocess.check_output(["git", "ls-remote", url, *refs], text=True, timeout=120)
+            break
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
     values = dict(line.split()[::-1] for line in out.splitlines() if line.strip())
     return values
 
@@ -168,15 +218,7 @@ def discover_gstreamer(version, accepted_series=GSTREAMER_SERIES):
         "https://gitlab.freedesktop.org/api/v4/projects/gstreamer%2Fgstreamer/repository/tags/" + version,
         headers={"User-Agent": "wolf_build"},
     )
-    for attempt in range(3):
-        try:
-            with urlopen(req, timeout=30) as response:
-                tag = json.load(response)
-                break
-        except HTTPError as err:
-            if err.code not in {429, 500, 502, 503, 504} or attempt == 2:
-                raise ValueError("gstreamer version not found: " + version)
-            time.sleep(2 ** attempt)
+    tag = json.loads(fetch(req))
     if tag.get("name") != version:
         raise ValueError("gstreamer version not found: " + version)
     return check_gstreamer(version,accepted_series)
@@ -184,8 +226,7 @@ def discover_gstreamer(version, accepted_series=GSTREAMER_SERIES):
 
 def discover_gstreamer_patch(series=GSTREAMER_SERIES):
     request=Request("https://gitlab.freedesktop.org/api/v4/projects/gstreamer%2Fgstreamer/repository/tags?search=%5E"+series+".&per_page=100",headers={"User-Agent":"wolf_build"})
-    with urlopen(request,timeout=30) as response:
-        tags=json.load(response)
+    tags=json.loads(fetch(request))
     eligible=[entry["name"] for entry in tags if re.fullmatch(re.escape(series)+r"\.\d+",entry.get("name",""))]
     if not eligible: raise ValueError("no stable patch release in compatible GStreamer series")
     return max(eligible,key=lambda tag:tuple(map(int,tag.split("."))))
@@ -207,15 +248,7 @@ def discover_base_digest():
 
 def hub_digest(image, tag):
     req = Request(f"https://hub.docker.com/v2/repositories/library/{image}/tags/{tag}", headers={"User-Agent": "wolf_build"})
-    for attempt in range(3):
-        try:
-            with urlopen(req, timeout=30) as response:
-                payload = json.load(response)
-                break
-        except HTTPError as err:
-            if err.code not in {429, 500, 502, 503, 504} or attempt == 2:
-                raise
-            time.sleep(2 ** attempt)
+    payload = json.loads(fetch(req))
     for image in payload.get("images", []):
         if image.get("architecture") == "amd64" and image.get("os") == "linux":
             digest = image.get("digest", "")
@@ -247,12 +280,14 @@ def main():
     parser.add_argument("--lock", action="store_true", help="Resolve all build sources, base and toolchain into a buildable lock")
     args = parser.parse_args()
     wolf_sha = args.wolf_sha or discover_wolf_stable()
-    series=GSTREAMER_SERIES
+    declared_version=GSTREAMER_DEFAULT
     if args.lock:
         declared=re.search(r"ARG GSTREAMER_VERSION=([\d.]+)",raw(WOLF_REPO,wolf_sha,"docker/gstreamer.Dockerfile"))
         if not declared: raise ValueError("Wolf does not declare its GStreamer version")
-        series=declared.group(1).rsplit(".",1)[0]
-    gstreamer_version = discover_gstreamer(args.gstreamer_version or discover_gstreamer_patch(series),series)
+        declared_version=declared.group(1)
+    policy=gstreamer_policy(declared_version)
+    series=policy["series"]
+    gstreamer_version = check_gstreamer_policy(discover_gstreamer(args.gstreamer_version or discover_gstreamer_patch(series),series),policy)
     if args.compositor_sha:
         compositor_sha = args.compositor_sha
     elif args.lock:
@@ -271,6 +306,7 @@ def main():
         intel = discover_intel()
     base_digest = args.base_digest or discover_base_digest()
     manifest = build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, intel["media"], intel["vpl"], intel["libvpl"], base_digest,gstreamer_series=series)
+    manifest["inputs"]["gstreamer"].update(policy)
     if args.lock:
         manifest = lock_sources(manifest, compositor_override=args.compositor_sha)
     path = Path(args.output)
@@ -287,8 +323,7 @@ def source_commit(url, ref):
         sha = github_api("repos/" + match[1] + "/commits/" + quote(ref, safe=""))["sha"]
     elif url == "https://gitlab.com/ReenigneArcher/Simple-Web-Server.git":
         request = Request("https://gitlab.com/api/v4/projects/ReenigneArcher%2FSimple-Web-Server/repository/commits/" + quote(ref, safe=""), headers={"User-Agent":"wolf_build"})
-        with urlopen(request, timeout=30) as response:
-            sha = json.load(response)["id"]
+        sha = json.loads(fetch(request))["id"]
     else:
         raise ValueError("unrecognized source URL: " + url)
     if not is_full_sha(sha):
@@ -297,8 +332,7 @@ def source_commit(url, ref):
 
 
 def raw(repo, sha, path):
-    with urlopen(Request(f"https://raw.githubusercontent.com/{repo}/{sha}/{path}", headers={"User-Agent":"wolf_build"}), timeout=30) as response:
-        return response.read().decode()
+    return fetch(Request(f"https://raw.githubusercontent.com/{repo}/{sha}/{path}", headers={"User-Agent":"wolf_build"})).decode()
 
 
 def lock_sources(manifest, compositor_override=""):
@@ -319,8 +353,9 @@ def lock_sources(manifest, compositor_override=""):
     rust = re.search(r"ARG RUST_VERSION=([\d.]+)", dockerfile)
     if not all((gst, pin, rust)):
         raise ValueError("Wolf build metadata changed; review compatibility before building")
-    if inputs["gstreamer"]["version"].rsplit(".",1)[0] != gst.group(1).rsplit(".",1)[0]:
-        raise ValueError("GStreamer series differs from Wolf's declaration")
+    policy = gstreamer_policy(gst.group(1))
+    check_gstreamer_policy(inputs["gstreamer"]["version"], policy)
+    inputs["gstreamer"].update(policy)
     add("gstreamer", "https://github.com/GStreamer/gstreamer.git", inputs["gstreamer"]["version"])
     add("compositor", "https://github.com/"+COMPOSITOR_REPO+".git", compositor_override or pin.group(1))
     inputs["compositor"] = {"repo":COMPOSITOR_REPO, "sha":sources["compositor"]["sha"]}

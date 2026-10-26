@@ -5,6 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 import io
 import sys
+import hashlib
+from urllib.error import HTTPError
 from contextlib import redirect_stdout
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -43,6 +45,20 @@ class ApplicationInputsTests(unittest.TestCase):
                     apps.download({"url": "https://example.invalid", "sha256": "a" * 64}, target)
             self.assertEqual(target.read_bytes(), b"previous")
             self.assertFalse(target.with_suffix(".partial").exists())
+
+    def test_asset_retries_transport_failure_but_not_missing_asset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "asset.deb"
+            asset = {"url":"https://example.invalid/asset", "sha256":hashlib.sha256(b"good").hexdigest()}
+            with patch.object(apps, "urlopen", side_effect=[TimeoutError("timeout"), io.BytesIO(b"good")]), \
+                 patch.object(apps.time, "sleep"):
+                apps.download(asset, target)
+            self.assertEqual(target.read_bytes(), b"good")
+            with patch.object(apps, "urlopen", side_effect=HTTPError("url",404,"missing",{},None)) as request:
+                with self.assertRaises(HTTPError):
+                    apps.download(asset, target)
+                self.assertEqual(request.call_count, 1)
+            self.assertEqual(target.read_bytes(), b"good")
 
     def test_application_recipe_hash_includes_nested_launch_scripts(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -28,3 +28,9 @@ The advisories published 2026-02-25 (SA-2026-0001 through 0012) were released be
 ## Coverage gap
 
 The HIGH/CRITICAL Trivy gate assesses distribution packages. A source-built GStreamer is not mapped to distribution advisories, so these findings do not appear in CI vulnerability results. No second scanner was added for this review.
+
+## Implementation checks
+
+The resolver selected `1.28.8` at `1b2a95a1b72787cda146b46df9605b168e5b683b` during live upstream discovery, recorded Wolf's `1.26.7` declaration and the explicit override, and retained the current compositor and interpipe pins. The reviewed minimum `1.28.8` covers the advisory baseline listed above through 2026-10-08. An absent review date/reason, a review predating the advisory cutoff or a patch below the minimum fails resolution. New advisories still require normal source review rather than trusting the distribution-only scan.
+
+Resolver regressions check the highest stable patch within the selected series, missing-tag failure, malformed review metadata, the minimum fixed version and divergence in the expanded manifest. Final-image checks now also require the loaded GStreamer version to match that manifest. Full build, final-image, Intel and session results remain pending until their tasks are checked.

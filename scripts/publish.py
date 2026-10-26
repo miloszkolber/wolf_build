@@ -151,7 +151,9 @@ def newer_publication_exists(name):
         newer = [run for run in runs if run["run_number"] > number and run["event"] != "pull_request"]
         for run in newer:
             jobs = gh(f"repos/{repo}/actions/runs/{run['id']}/jobs?filter=all&per_page=100")["jobs"]
-            if any(job["name"] == job_name and any(
+            # Reusable per-application jobs carry a caller prefix, e.g.
+            # "steam / publish (steam)". Older runs used the unprefixed name.
+            if any(job["name"].rsplit(" / ", 1)[-1] == job_name and any(
                 step["name"] == "Publish checked image and latest" and step["conclusion"] == "success"
                 for step in job.get("steps", [])
             ) for job in jobs):

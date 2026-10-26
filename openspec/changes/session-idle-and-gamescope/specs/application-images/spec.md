@@ -28,3 +28,11 @@ Both application images SHALL route the default ALSA playback and control throug
 #### Scenario: Game uses default ALSA playback
 - **WHEN** a 32-bit or 64-bit application opens the default ALSA PCM with a reachable session Pulse server
 - **THEN** its non-silent samples reach the selected session sink without requiring a host ALSA sound card
+
+### Requirement: Independent application publication
+
+Steam and Heroic SHALL keep separate build-to-publication dependencies while sharing the maintained recipe and publisher. A failure in one application SHALL NOT block publication of the other application's checked image.
+
+#### Scenario: One application fails its checks
+- **WHEN** Heroic fails acquisition or verification and Steam passes its own required checks
+- **THEN** Heroic cannot publish and Steam can still publish through its existing single publisher

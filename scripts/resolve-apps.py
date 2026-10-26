@@ -2,9 +2,11 @@
 import argparse
 import hashlib
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 from resolve import BASE_IMAGE, discover_base_digest, github_api
 
@@ -43,14 +45,23 @@ def identity(inputs):
 def download(asset, target):
     temporary = target.with_suffix(".partial")
     try:
-        with urlopen(Request(asset["url"], headers={"User-Agent": "wolf-build"}), timeout=120) as response, temporary.open("wb") as output:
-            digest = hashlib.sha256()
-            while chunk := response.read(1024 * 1024):
-                digest.update(chunk)
-                output.write(chunk)
-        if digest.hexdigest() != asset["sha256"]:
-            raise ValueError("Heroic asset checksum mismatch")
-        temporary.replace(target)
+        for attempt in range(3):
+            try:
+                with urlopen(Request(asset["url"], headers={"User-Agent": "wolf-build"}), timeout=120) as response, temporary.open("wb") as output:
+                    digest = hashlib.sha256()
+                    while chunk := response.read(1024 * 1024):
+                        digest.update(chunk)
+                        output.write(chunk)
+                if digest.hexdigest() != asset["sha256"]:
+                    raise ValueError("Heroic asset checksum mismatch")
+                temporary.replace(target)
+                return
+            except (URLError, TimeoutError, ConnectionError) as error:
+                if isinstance(error, HTTPError) and error.code not in {429, 500, 502, 503, 504}:
+                    raise
+                if attempt == 2:
+                    raise
+                time.sleep(2 ** attempt)
     finally:
         temporary.unlink(missing_ok=True)
 

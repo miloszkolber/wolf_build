@@ -209,7 +209,14 @@ def run(socket_path, timeout):
                         except ValueError:
                             continue
                 for session in state.due(time.monotonic()):
-                    if stop(socket_path, session):
+                    try:
+                        stopped = stop(socket_path, session)
+                    except OSError as error:
+                        # The stop request uses a different connection. Its
+                        # failure does not imply a gap in the event stream.
+                        log(f"stop request for session {session} failed: {error}; retrying")
+                        stopped = False
+                    if stopped:
                         log(f"stopped session {session} after {timeout}s without a client")
                         state.forget(session)
                     else:

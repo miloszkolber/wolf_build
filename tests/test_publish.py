@@ -158,6 +158,9 @@ class PublicationTests(unittest.TestCase):
                 self.assertTrue(publish.newer_publication_exists("wolf_steam"))
             with patch.object(publish, "gh", side_effect=[newer, job]):
                 self.assertFalse(publish.newer_publication_exists("wolf_heroic"))
+            job["jobs"][0]["name"] = "steam / publish (steam)"
+            with patch.object(publish, "gh", side_effect=[newer, job]):
+                self.assertTrue(publish.newer_publication_exists("wolf_steam"))
             failed_post_step = copy.deepcopy(job)
             failed_post_step["jobs"][0]["conclusion"] = "failure"
             with patch.object(publish, "gh", side_effect=[newer, failed_post_step]):

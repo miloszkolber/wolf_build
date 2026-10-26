@@ -7,13 +7,36 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 
 sys.path.insert(0, str(Path(__file__).parent))
 from resolve import candidate_tag, fingerprint, is_full_sha, packaging_identity
 
 
 def git(*args, cwd=None):
-    return subprocess.check_output(["git", *args], cwd=cwd, text=True).strip()
+    network = args[0] == "fetch" or args[:2] == ("submodule", "update")
+    for attempt in range(3 if network else 1):
+        try:
+            return subprocess.check_output(["git", *args], cwd=cwd, text=True,
+                                           timeout=600 if network else 120).strip()
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            if not network or attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+
+
+def submodule_inventory(target):
+    # Human-readable `submodule status` descriptions depend on local tags and
+    # branches. Only paths and checked-out object identities belong in inputs.
+    output = git("submodule", "foreach", "--quiet", "--recursive",
+                 'printf "%s\\t%s\\n" "$displaypath" "$(git rev-parse HEAD)"', cwd=target)
+    result = {}
+    for line in output.splitlines():
+        path, sha = line.split("\t")
+        if not path or path in result or not is_full_sha(sha):
+            raise ValueError("invalid submodule inventory")
+        result[path] = sha
+    return dict(sorted(result.items()))
 
 
 def validate_source(source):
@@ -45,7 +68,7 @@ def acquire(source, target):
         raise ValueError("submodule object identity mismatch")
     if git("status", "--porcelain", "--untracked-files=all", cwd=target):
         raise ValueError("submodule cache contains unrecorded modifications")
-    return submodules
+    return submodule_inventory(target)
 
 
 def main():
@@ -67,6 +90,8 @@ def main():
             raise ValueError("package lock changed after resolution: " + stage)
     cache = root.parent / "sources"
     root.mkdir(parents=True, exist_ok=True)
+    for directory in ("sources", "wolf-dependencies", "licenses"):
+        if (root / directory).exists(): shutil.rmtree(root / directory)
     inventory = {}
     for name, source in manifest["inputs"]["sources"].items():
         if not re.fullmatch(r"[a-z0-9_-]+", name): raise ValueError("unsafe source name")
@@ -74,8 +99,7 @@ def main():
         cached = cache / name
         submodules = acquire(source, cached)
         inventory[name] = submodules
-        destination = root / "sources" / name
-        if destination.exists(): shutil.rmtree(destination)
+        destination = root / ("wolf-dependencies" if name.startswith("wolf-") else "sources") / name
         shutil.copytree(cached, destination, symlinks=True, ignore=shutil.ignore_patterns(".git"))
         licenses = root / "licenses" / name
         licenses.mkdir(parents=True, exist_ok=True)

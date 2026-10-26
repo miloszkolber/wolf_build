@@ -112,9 +112,7 @@ jobs:
       - name: Export checked image
         run: docker save wolf-test:local -o candidate.tar
       - name: SBOM and vulnerability assessment
-        run: |
-          docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --format cyclonedx --output /work/candidate.cdx.json
-          docker run --rm -v "$PWD:/work" aquasec/trivy:0.76.0 image --input /work/candidate.tar --severity HIGH,CRITICAL --exit-code 1 --format json --output /work/vulnerabilities.json
+        run: bash scripts/scan-image.sh candidate.tar
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:

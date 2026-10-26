@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import itertools
 import socket
 import tempfile
 import threading
@@ -116,6 +117,22 @@ class ApiTransportTests(unittest.TestCase):
 
 
 class SubscriptionSafetyTests(unittest.TestCase):
+    def test_stop_transport_error_retries_without_losing_subscription(self):
+        class EndProbe(Exception):
+            pass
+        sock = unittest.mock.Mock()
+        pause = b'event: PauseStreamEvent\ndata: {"session_id":"42"}\n\n'
+        with patch.object(idle, "open_events", return_value=(sock, pause)) as subscribe, \
+             patch.object(idle.time, "monotonic", side_effect=itertools.count(0, 100)), \
+             patch.object(idle.select, "select", side_effect=[([], [], []), ([], [], []), EndProbe]), \
+             patch.object(idle, "stop", side_effect=[TimeoutError("stop HTTP timeout"), True]) as stop:
+            with self.assertRaises(EndProbe):
+                idle.run("unused", 1)
+            subscribe.assert_called_once()
+            self.assertEqual(stop.call_count, 2)
+            self.assertEqual(stop.call_args.args, ("unused", "42"))
+            sock.close.assert_called_once()
+
     def test_startup_never_arms_existing_sessions_with_unknown_connection_state(self):
         # Wolf's list cannot distinguish active from paused. Starting the
         # observer after a client's Resume event must not kill that live game.

@@ -22,7 +22,12 @@ meson setup /build/libva /sources/libva --prefix="$prefix" --libdir=lib \
 meson compile -C /build/libva -j "$jobs"
 meson install -C /build/libva
 ;;
-media-driver) cmake_install media-driver -DBUILD_TESTING=OFF ;;
+media-driver)
+cmake_install media-driver -DBUILD_TESTING=OFF
+# The Intel build retains large DWARF sections even in Release mode. Strip the
+# installed copy here so those bytes never enter a final-image layer.
+strip --strip-unneeded "$prefix/lib/dri/iHD_drv_video.so"
+;;
 libvpl) cmake_install libvpl -DBUILD_TOOLS=OFF -DBUILD_TESTS=OFF ;;
 vpl-gpu-rt) cmake_install vpl-gpu-rt -DBUILD_TESTING=OFF ;;
 

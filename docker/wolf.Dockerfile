@@ -14,24 +14,35 @@ ENV PATH=/usr/local/cargo/bin:/opt/wolf-runtime/bin:$PATH \
     PKG_CONFIG_PATH=/opt/wolf-runtime/lib/pkgconfig \
     LD_LIBRARY_PATH=/opt/wolf-runtime/lib \
     C_INCLUDE_PATH=/opt/wolf-runtime/include CPLUS_INCLUDE_PATH=/opt/wolf-runtime/include
-COPY .build/context/sources/ /sources/
 COPY scripts/compile-runtime.sh /compile-runtime.sh
 ARG BUILD_JOBS=2
 ENV BUILD_JOBS=${BUILD_JOBS}
+COPY .build/context/sources/gmmlib/ /sources/gmmlib/
 RUN bash /compile-runtime.sh gmmlib
+COPY .build/context/sources/libva/ /sources/libva/
 RUN bash /compile-runtime.sh libva
+COPY .build/context/sources/media-driver/ /sources/media-driver/
 RUN bash /compile-runtime.sh media-driver
+COPY .build/context/sources/libvpl/ /sources/libvpl/
 RUN bash /compile-runtime.sh libvpl
+COPY .build/context/sources/vpl-gpu-rt/ /sources/vpl-gpu-rt/
 RUN bash /compile-runtime.sh vpl-gpu-rt
 COPY scripts/compile-gstreamer.sh /compile-gstreamer.sh
+COPY .build/context/sources/gstreamer/ /sources/gstreamer/
 RUN bash /compile-gstreamer.sh gstreamer
+COPY .build/context/sources/interpipe/ /sources/interpipe/
 RUN bash /compile-gstreamer.sh interpipe
+COPY .build/context/sources/compositor/ /sources/compositor/
 COPY scripts/compile-compositor.sh /compile-compositor.sh
 COPY scripts/collect-rust-licenses.py /collect-rust-licenses.py
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     bash /compile-compositor.sh
 COPY .build/context/locked-sources.cmake /locked-sources.cmake
+COPY .build/context/sources/wolf/ /sources/wolf/
+# All FetchContent dependencies have wolf-* names. build-inputs.py prepares
+# this subset without moving a Wolf-only change ahead of the Intel builds.
+COPY .build/context/wolf-dependencies/ /sources/
 COPY scripts/compile-wolf.sh /compile-wolf.sh
 RUN bash /compile-wolf.sh
 

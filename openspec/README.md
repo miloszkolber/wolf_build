@@ -5,7 +5,7 @@
 | Location | Content |
 | --- | --- |
 | [project.md](project.md) | Scope, repository boundaries and planned file layout |
-| [specs/](specs/README.md) | Implemented contracts only, currently none |
+| [specs/](specs/README.md) | Implemented runtime, application, gate-integration and maintenance contracts |
 | [changes/archive/2026-10-16-intel-wolf-runtime/](changes/archive/2026-10-16-intel-wolf-runtime/proposal.md) | Initial proposal, design, requirement deltas, tasks and evidence; archived 2026-10-16 after operator acceptance |
 | [backlog.md](backlog.md) | Deferred work, not current implementation scope |
 | [maintenance-state.md](maintenance-state.md) | Reviewed cursor of the scheduled dependency review |

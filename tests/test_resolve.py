@@ -5,6 +5,9 @@ import subprocess
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
+from urllib.error import URLError
+import io
+import json
 
 SPEC = importlib.util.spec_from_file_location("resolve", Path(__file__).parents[1] / "scripts" / "resolve.py")
 resolve = importlib.util.module_from_spec(SPEC)
@@ -31,6 +34,39 @@ def manifest(**overrides):
 
 
 class ResolverTests(unittest.TestCase):
+    def test_reviewed_series_records_divergence_and_rejects_old_advisory_basis(self):
+        policy = resolve.gstreamer_policy("1.26.7")
+        self.assertEqual(policy["series"], "1.28")
+        self.assertEqual(policy["declared_version"], "1.26.7")
+        self.assertEqual(resolve.check_gstreamer_policy("1.28.8", policy), "1.28.8")
+        with self.assertRaisesRegex(ValueError, "advisory floor"):
+            resolve.check_gstreamer_policy("1.28.7", policy)
+        with patch.object(resolve, "GSTREAMER_REVIEW", {"series":"1.28"}):
+            with self.assertRaisesRegex(ValueError, "dated advisory review"):
+                resolve.gstreamer_policy("1.26.7")
+        for changes in ({"reviewed_at":""}, {"reviewed_at":"2099-01-01"},
+                        {"reviewed_at":"2026-01-01"}, {"reason":""}):
+            with patch.object(resolve, "GSTREAMER_REVIEW", dict(resolve.GSTREAMER_REVIEW, **changes)):
+                with self.assertRaises(ValueError):
+                    resolve.gstreamer_policy("1.26.7")
+        with patch.object(resolve, "GSTREAMER_REVIEW", None):
+            self.assertEqual(resolve.gstreamer_policy("1.26.7")["series"], "1.26")
+
+    def test_series_selects_highest_stable_patch_and_missing_tag_fails(self):
+        tags = [{"name":v} for v in ("1.28.7", "1.29.0", "1.28.9-rc1", "1.28.8")]
+        with patch.object(resolve, "urlopen", return_value=io.BytesIO(json.dumps(tags).encode())):
+            self.assertEqual(resolve.discover_gstreamer_patch("1.28"), "1.28.8")
+        with patch.object(resolve, "urlopen", side_effect=HTTPError("url",404,"missing",{},None)) as request:
+            with self.assertRaises(HTTPError):
+                resolve.discover_gstreamer("1.28.8", "1.28")
+            self.assertEqual(request.call_count, 1)
+
+    def test_metadata_transport_failures_retry_with_a_bound(self):
+        for error in (URLError("reset"), TimeoutError("timeout")):
+            with patch.object(resolve, "urlopen", side_effect=[error, io.BytesIO(b'{}')]) as request, \
+                 patch.object(resolve.time, "sleep"):
+                self.assertEqual(resolve.github_api("repos/example/release"), {})
+                self.assertEqual(request.call_count, 2)
     def test_manifest_schema_and_stable_tag(self):
         first = manifest()
         self.assertEqual(first["version"], 1)

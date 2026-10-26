@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import unittest
 import tempfile
+import subprocess
 from unittest.mock import patch
 from urllib.error import HTTPError
 
@@ -17,6 +18,13 @@ spec.loader.exec_module(acquisition)
 
 
 class LockedInputsTests(unittest.TestCase):
+    def test_git_network_retry_has_per_operation_deadline(self):
+        with patch.object(acquisition.subprocess, "check_output", side_effect=[subprocess.TimeoutExpired("git",600), "done"]) as run, \
+             patch.object(acquisition.time, "sleep"):
+            self.assertEqual(acquisition.git("fetch", "origin", "a"*40), "done")
+            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_args.kwargs["timeout"], 600)
+
     def test_acquisition_rejects_git_object_mismatch(self):
         with tempfile.TemporaryDirectory() as temp:
             target=Path(temp);(target/".git").mkdir()
@@ -40,12 +48,39 @@ class LockedInputsTests(unittest.TestCase):
             if args[0]=="checkout": state["head"]="a"*40
             if args[:2]==("submodule","update"): state["updated"]=True
             if args[:2]==("submodule","status"): return "a"*40+" child"
+            if args[:2]==("submodule","foreach"): return "child\t"+"a"*40
             return ""
         with tempfile.TemporaryDirectory() as temp:
             target=Path(temp);(target/".git").mkdir()
             with patch.object(acquisition,"git",side_effect=git):
                 result=acquisition.acquire({"url":"https://github.com/a/b.git","sha":"a"*40},target)
-        self.assertEqual(result,"a"*40+" child")
+        self.assertEqual(result,{"child":"a"*40})
+
+    def test_submodule_identity_ignores_descriptive_tags_but_tracks_commits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            child = root / "child"; child.mkdir()
+            parent = root / "parent"; parent.mkdir()
+            def git(path, *args):
+                return subprocess.check_output(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", *args],
+                                               cwd=path, text=True, stderr=subprocess.DEVNULL).strip()
+            git(child, "init", "-q", "-b", "main")
+            (child / "file").write_text("original")
+            git(child, "add", "."); git(child, "commit", "-qm", "initial")
+            git(parent, "init", "-q", "-b", "main")
+            git(parent, "-c", "protocol.file.allow=always", "submodule", "add", str(child), "dependency with spaces")
+            git(parent, "commit", "-qam", "initial")
+            source = {"url":"https://github.com/example/fixture.git", "sha":git(parent,"rev-parse","HEAD")}
+            before = acquisition.acquire(source, parent)
+            dependency = parent / "dependency with spaces"
+            git(dependency, "tag", "description-only")
+            self.assertEqual(before, acquisition.acquire(source, parent))
+            self.assertEqual(before, {"dependency with spaces":git(dependency,"rev-parse","HEAD")})
+            (dependency / "file").write_text("changed")
+            git(dependency, "commit", "-qam", "new source")
+            git(parent, "add", "."); git(parent, "commit", "-qm", "advance dependency")
+            source["sha"] = git(parent, "rev-parse", "HEAD")
+            self.assertNotEqual(before, acquisition.acquire(source, parent))
 
     def test_rate_limit_failure_never_falls_back(self):
         with patch.object(resolve,"urlopen",side_effect=HTTPError("url",429,"limited",{},None)) as request,patch.object(resolve.time,"sleep"):
@@ -65,7 +100,7 @@ class LockedInputsTests(unittest.TestCase):
                 with self.assertRaises(ValueError): resolve.discover_intel()
 
     def test_lock_expands_declared_compatibility_and_unpinned_cmake(self):
-        inputs={"wolf":{"sha":"a"*40},"gstreamer":{"version":"1.26.7"},"interpipe":{"sha":"b"*40},"intel":{"media_driver":"intel-media-26.3.5","vpl_gpu_rt":"intel-onevpl-26.3.5","libvpl":"v2.17.0"}}
+        inputs={"wolf":{"sha":"a"*40},"gstreamer":{"version":"1.28.8"},"interpipe":{"sha":"b"*40},"intel":{"media_driver":"intel-media-26.3.5","vpl_gpu_rt":"intel-onevpl-26.3.5","libvpl":"v2.17.0"}}
         original=copy.deepcopy(inputs)
         def api(path):
             if "releases/tags" in path: return {"body":"intel-gmmlib-22.10.2 intel/libva/releases/tag/2.24.1 intel/libvpl/releases/tag/v2.17.0"}
@@ -89,6 +124,9 @@ class LockedInputsTests(unittest.TestCase):
         self.assertEqual(inputs["sources"]["wolf-mdns_cpp"]["sha"],"c"*40)
         self.assertEqual(inputs["sources"]["gmmlib"]["ref"],"intel-gmmlib-22.10.2")
         self.assertIn("digest",inputs["toolchain"])
+        self.assertEqual(inputs["gstreamer"]["declared_version"], "1.26.7")
+        self.assertEqual(inputs["gstreamer"]["series"], "1.28")
+        self.assertEqual(inputs["gstreamer"]["review"]["minimum_version"], "1.28.8")
 
     def test_base_must_resolve_for_target_architecture(self):
         class Response:

@@ -35,3 +35,11 @@
 - [x] 5.2 Retain Pulse diagnostics, require a responsive audio server for runtime health and shut down the runtime coherently when embedded Pulse exits. Verify the actual supervisor failure path without production state or GPU access.
 - [x] 5.3 Correct the DRM example and document startup versus live-reset guarantees. Repair saved application hidraw fallback rules using the current kernel major without changing controller selection or persistent game settings. Confirm the pinned runner already injects live majors at creation rather than claiming the stale fallback proves an effective permission failure.
 - [x] 5.4 Run repository checks, publish checked images and apply an authorized idle rollout. Record image checks separately from affected-game and audible Moonlight acceptance.
+
+## 6. Repository reliability and build efficiency
+
+- [x] 6.1 Retry individual stop-request transport errors without clearing paused sessions or reconnecting a healthy event stream. Preserve fail-open handling of actual subscription gaps.
+- [x] 6.2 Canonicalize submodule identity to path/full-commit pairs and verify tag-only metadata changes cannot change the identity.
+- [ ] 6.3 Strip the installed VA driver before final image assembly and use component-specific source COPY boundaries. Verify the final stripped candidate's plugins and supported Intel codecs.
+- [ ] 6.4 Share one freshly updated scanner database between checks with bounded download retries, and let each application publish independently while preserving separate build/publish permissions.
+- [ ] 6.5 Bound transient upstream requests and Git acquisition, run repository checks, publish checked images and apply an authorized idle rollout without changing the session grace or game state.
