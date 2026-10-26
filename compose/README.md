@@ -23,7 +23,7 @@ The `/dev` bind is intentional for upstream hotplug: `runners/docker.cpp` discov
 
 State and socket bind mounts let Wolf introspect their host paths when launching application containers. Pairing certificates, TOML and game state are runtime-owned. [Steam and Heroic candidates](apps.md) are built and maintained here. Existing configurations are not silently migrated to them.
 
-Set the current `hidraw` major in the application runner rules too, as described in [application integration](apps.md). Runtime grants do not transfer to sibling containers.
+Keep the saved application runner rules consistent as fallback, as described in [application integration](apps.md). The pinned Wolf runner normally discovers and injects the current majors at creation. Runtime grants do not transfer to sibling containers.
 
 ## Authorized rollout and recovery
 

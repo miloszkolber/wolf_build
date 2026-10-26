@@ -37,7 +37,7 @@ Each image embeds its resolved base/release/recipe/package manifest and installe
 
 Wolf creates these application containers, not Compose. It supplies `PUID`, `PGID`, `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY`, Pulse server/sink/source, linked DRM/input devices, fake-udev and the per-user `/home/retro` mount. The entrypoint keeps those paths and groups, changes ownership only on top-level writable directories and the supplied session Wayland socket, then drops privileges before launching the application. It does not recursively rewrite game-library ownership. Nested Sway hides the cursor after inactivity and while typing for couch navigation; gamescope hides it after the same idle delay.
 
-Read the current `hidraw` major from `/proc/devices` and apply it to each runner's `base_create_json.HostConfig.DeviceCgroupRules`, not only the outer runtime's Compose rule. Application containers are siblings, so they do not inherit runtime device grants. Recheck these rules after kernel changes.
+The pinned Wolf runner reads the current `hidraw` and `input` majors from `/proc/devices` and replaces the application's device-cgroup rules immediately before container creation. Keep saved `base_create_json.HostConfig.DeviceCgroupRules` consistent with the kernel as fallback if discovery fails, and check the actual container's effective grants when diagnosing input. Application containers are siblings, so they do not inherit runtime device grants.
 
 The maintained runner references use unpinned `:latest` images and a Heroic runner name with a `heroic-games:/games:rw` shared library:
 

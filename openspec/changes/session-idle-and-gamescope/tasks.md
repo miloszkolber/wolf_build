@@ -33,5 +33,5 @@
 
 - [x] 5.1 Route the shared application images' default ALSA PCM/control to the session Pulse server. Verify real 32-bit and 64-bit playback reaches a session sink monitor, and make the check a publication prerequisite.
 - [x] 5.2 Retain Pulse diagnostics, require a responsive audio server for runtime health and shut down the runtime coherently when embedded Pulse exits. Verify the actual supervisor failure path without production state or GPU access.
-- [x] 5.3 Correct the DRM example and document startup versus live-reset guarantees. Repair deployed application hidraw rules using the current kernel major without changing controller selection or persistent game settings.
-- [ ] 5.4 Run repository checks, publish checked images and apply an authorized idle rollout. Record image checks separately from affected-game and audible Moonlight acceptance.
+- [x] 5.3 Correct the DRM example and document startup versus live-reset guarantees. Repair saved application hidraw fallback rules using the current kernel major without changing controller selection or persistent game settings. Confirm the pinned runner already injects live majors at creation rather than claiming the stale fallback proves an effective permission failure.
+- [x] 5.4 Run repository checks, publish checked images and apply an authorized idle rollout. Record image checks separately from affected-game and audible Moonlight acceptance.
