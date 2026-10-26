@@ -4,7 +4,7 @@ Reviewed cursor for the scheduled dependency review. It records what was actuall
 
 ## Reviewed 2026-10-26
 
-Local revision `080aa1b`. Reviewed recipe and configuration paths: `docker/wolf.Dockerfile`, `docker/apps.Dockerfile`, `docker/packages/*.txt`, `docker/runtime/wolf-session-idle.conf`, `scripts/resolve.py`, `scripts/resolve-apps.py`, `scripts/build-inputs.py`, `scripts/lock-packages.py`, `compose/docker-compose.yaml`, `compose/.env.example`, `.github/workflows/build.yml`, `.github/workflows/apps.yml`, `.github/workflows/docs.yml`, `.github/dependabot.yml`.
+Local revision at review start: `080aa1b`. Reviewed recipe and configuration paths: `docker/wolf.Dockerfile`, `docker/apps.Dockerfile`, `docker/packages/*.txt`, `docker/runtime/wolf-session-idle.conf`, `scripts/resolve.py`, `scripts/resolve-apps.py`, `scripts/build-inputs.py`, `scripts/lock-packages.py`, `compose/docker-compose.yaml`, `compose/.env.example`, `.github/workflows/build.yml`, `.github/workflows/apps.yml`, `.github/workflows/docs.yml`, `.github/dependabot.yml`.
 
 Published identities when this review started, all with immutable tag and `latest` on the same digest: `wolf_runtime` `stable-6a5053b4ebbb-33bf3cfe73a6` = `sha256:cc6ce1f93d1b3aa90252536546ddb2deb93d87558566e652403516466c2b9e19`, `wolf_steam` `f9f265759c315f41` = `sha256:c270e8e308541f455a74c6813c33bb653ac531ea70c0b98df72341b2a7952f47`, `wolf_heroic` `6c181db66066f66f` = `sha256:2ad590f25f04dae0c379f0946b314e453138674ccb60bfe9d9838217201f7da0`.
 
