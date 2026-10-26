@@ -41,5 +41,5 @@
 - [x] 6.1 Retry individual stop-request transport errors without clearing paused sessions or reconnecting a healthy event stream. Preserve fail-open handling of actual subscription gaps.
 - [x] 6.2 Canonicalize submodule identity to path/full-commit pairs and verify tag-only metadata changes cannot change the identity.
 - [ ] 6.3 Strip the installed VA driver before final image assembly and use component-specific source COPY boundaries. Verify the final stripped candidate's plugins and supported Intel codecs.
-- [ ] 6.4 Share one freshly updated scanner database between checks with bounded download retries, and let each application publish independently while preserving separate build/publish permissions.
+- [x] 6.4 Share one freshly updated scanner database between checks with bounded download retries, and let each application publish independently while preserving separate build/publish permissions.
 - [ ] 6.5 Bound transient upstream requests and Git acquisition, run repository checks, publish checked images and apply an authorized idle rollout without changing the session grace or game state.

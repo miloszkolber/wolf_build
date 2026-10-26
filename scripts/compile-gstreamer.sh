@@ -3,6 +3,10 @@ set -euo pipefail
 prefix=/opt/wolf-runtime
 jobs=${BUILD_JOBS:-2}
 if [ "$1" = gstreamer ]; then
+    # 1.28 plugin docs request gstcheck's doc-cache generator before honouring
+    # -Ddoc=disabled, and auto_features=disabled turns check off. Keep the
+    # core subproject's check library enabled so configure works; tests and
+    # documentation stay disabled.
     meson setup /build/gstreamer /sources/gstreamer --prefix="$prefix" --libdir=lib \
         --buildtype=release --strip --wrap-mode=nofallback -Dauto_features=disabled \
         -Dbase=enabled -Dgood=enabled -Dbad=enabled -Dugly=enabled -Dgpl=enabled \
@@ -18,7 +22,7 @@ if [ "$1" = gstreamer ]; then
         -Dgst-plugins-bad:videoparsers=enabled -Dgst-plugins-bad:va=enabled \
         -Dgst-plugins-bad:qsv=enabled -Dgst-plugins-bad:x265=enabled \
         -Dgst-plugins-bad:aom=enabled -Dgst-plugins-ugly:x264=enabled \
-        -Dtests=disabled -Dexamples=disabled -Ddoc=disabled
+        -Dtests=disabled -Dexamples=disabled -Ddoc=disabled -Dgstreamer:check=enabled
     meson compile -C /build/gstreamer -j "$jobs"
     meson install -C /build/gstreamer
 elif [ "$1" = interpipe ]; then
