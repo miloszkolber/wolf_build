@@ -15,13 +15,14 @@ from urllib.request import Request, urlopen
 MANIFEST_VERSION = 1
 WOLF_REPO = "games-on-whales/wolf"
 WOLF_REF = "stable"
-# Upstream moved `stable` to its latest published GitHub release during the
-# 2026-10 release-channel migration. The only published release is v2024.07
-# (40b0c5c, 2024-07-10), which predates the build metadata this lock reads and
-# cannot be built here, so discovery holds the last reviewed source commit until
-# upstream publishes its first calendar release. Review and clear the hold then;
-# openspec/maintenance-state.md records the reviewed identity.
-WOLF_SHA_PIN = "6a5053b4ebbb19f2c0f3bf1e8fbbd8babf109273"
+# `refs/heads/stable` now tracks upstream's monthly calendar releases. During
+# the 2026-10 migration it still pointed at v2024.07, which predates the build
+# metadata this lock reads, so discovery held the last reviewed source commit.
+# v2026.11 (db709cf, 2026-11-01) declares the same GStreamer, Rust and
+# compositor metadata and changes no startup, supervisor or session API
+# contract, so the hold is cleared. A future hold sets this to a full commit
+# again; openspec/maintenance-state.md records each reviewed identity.
+WOLF_SHA_PIN = ""
 COMPOSITOR_REPO = "games-on-whales/gst-wayland-display"
 COMPOSITOR_PIN = "016b4fc"
 INTERPIPE_REPO = "games-on-whales/gst-interpipe"
