@@ -11,7 +11,7 @@
 | [maintenance-state.md](maintenance-state.md) | Reviewed cursor of the scheduled dependency review |
 | [config.yaml](config.yaml) | OpenSpec context and rules |
 
-The shared gate is owned by `llama_build`. This repository specifies its consuming interface, not duplicate gate internals or a runtime build dependency. [Acceptance records](acceptance.md) describe full session acceptance separately from automatic checked-image publication.
+The shared gate is owned by `llama_build`. This repository specifies its consuming interface, not duplicate gate internals or a runtime build dependency. [Acceptance records](acceptance.md) describe full session acceptance separately from automatic checked-image publication. The [session idle and Gamescope change](changes/archive/2026-11-02-session-idle-and-gamescope/proposal.md) records its separate operator acceptance.
 
 ## Checks
 
@@ -23,6 +23,6 @@ bun scripts/check-docs.mjs
 OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
 ```
 
-Structural validation establishes that the proposal is well formed, not that an image works. The active change records final-image checks, Intel probes and outstanding Moonlight acceptance separately.
+Structural validation establishes that a proposal is well formed, not that an image works. Active changes record final-image checks, Intel probes and outstanding Moonlight acceptance separately.
 
-Do not archive this proposal or promote deltas to main specs until implementation, review and the required acceptance are complete. Keep the same task ledger and evidence file current. Completed work will consolidate into the repository's own change history without deployment-specific reports.
+Do not archive a proposal or promote deltas to main specs until implementation, review and the required acceptance are complete. Keep the same task ledger and evidence file current. Completed work consolidates into the repository's own change history without deployment-specific reports.

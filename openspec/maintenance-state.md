@@ -4,7 +4,7 @@ Reviewed cursor for the scheduled dependency review. It records what was actuall
 
 ## Reviewed 2026-11-02
 
-Local revision at review start: `912e8dd`. This review merged `7894e7a` (Wolf release tracking) and `6a99947` (action version comments) on top of `8b2a93e` (Dependabot merge) and published the identities below.
+Local revision at review start: `912e8dd`. This review merged `6a99947` (Wolf release tracking) and `7894e7a` (action version comments) on top of `8b2a93e` (Dependabot merge) and published the identities below.
 
 Reviewed recipe and configuration paths: `docker/wolf.Dockerfile`, `docker/apps.Dockerfile`, `docker/packages/*.txt`, `docker/runtime/wolf-session-idle.conf`, `scripts/resolve.py`, `scripts/resolve-apps.py`, `scripts/build-inputs.py`, `scripts/lock-packages.py`, `compose/docker-compose.yaml`, `compose/.env.example`, `.github/workflows/build.yml`, `.github/workflows/app.yml`, `.github/workflows/apps.yml`, `.github/workflows/docs.yml`, `.github/dependabot.yml`.
 
@@ -62,6 +62,6 @@ The 2026-10-26 review activated the GStreamer 1.28 change and adopted the gate d
 ## Not covered by this review
 
 - No Intel device probe, GPU encode, Moonlight session, audio, controller or idle-stop acceptance was run for the new digests. Publication is not acceptance.
-- The active [GStreamer 1.28 change](changes/gstreamer-1.28-series/proposal.md) still has its real-session task open, and the [session idle and Gamescope change](changes/session-idle-and-gamescope/proposal.md) still has its TV tasks open.
+- The active [GStreamer 1.28 change](changes/gstreamer-1.28-series/proposal.md) still has its real-session task open. The operator subsequently accepted the [session idle and Gamescope change](changes/archive/2026-11-02-session-idle-and-gamescope/proposal.md) without providing exact test details or image identities. This does not establish acceptance for the new digests reviewed here.
 - Distribution package closures were resolved by CI, not re-resolved locally, and base-image contents were compared by digest, not unpacked.
 - No host deployment or service restart was performed by this review.

@@ -2,12 +2,22 @@
 
 ### Requirement: Idle session stop
 
-The runtime SHALL stop a stream session whose Moonlight client has been gone longer than a configured interval, while keeping the session resumable during that interval. The interval SHALL be configurable through `WOLF_SESSION_IDLE_TIMEOUT` and SHALL default to 900 seconds. A value of zero SHALL disable the stop.
+The runtime SHALL track observed session creation and pause events and request a normal session stop after a configured interval unless an observed resume or stop cancels the deadline. The interval SHALL be configurable through `WOLF_SESSION_IDLE_TIMEOUT` and SHALL default to 900 seconds. A value of zero SHALL disable the stop. The watcher SHALL fail open across event subscription gaps and SHALL NOT infer connection state for existing sessions.
 
 #### Scenario: Client disappears
-- **WHEN** the Moonlight control channel drops and no resume arrives within the configured interval
-- **THEN** the runtime fires its normal stop path for that session and the application container exits
+- **WHEN** the watcher observes the Moonlight control channel pause and the event subscription remains uninterrupted without a resume or stop until the configured interval expires
+- **THEN** the runtime requests its normal stop path for that session
+- **AND** a successful stop ends the application container
 - **AND** the shared gate can stop the runtime once no application container remains
+
+#### Scenario: Subscription interrupted
+- **WHEN** the event subscription is interrupted, possibly hiding a pause or resume
+- **THEN** the watcher clears pending deadlines rather than stopping a potentially active session
+- **AND** an unobserved pause can leave the session running until another observed pause or explicit quit
+
+#### Scenario: Stop request fails
+- **WHEN** a stop request fails while the event subscription remains healthy
+- **THEN** the watcher retries a bounded number of times and gives up if those attempts fail
 
 #### Scenario: Client returns
 - **WHEN** the same client resumes before the interval expires

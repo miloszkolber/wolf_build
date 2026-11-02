@@ -18,7 +18,7 @@ Modified capabilities are `intel-runtime` and `application-images`.
 
 ## Status and authority
 
-Implementation and repository checks are authorized. Publication is not deployment. The published runtime replaced the host's temporary scheduler task after the supervised watcher started in the deployed container. The on-TV gamescope acceptance and a real Moonlight idle-stop check remain with the operator.
+Implementation and repository checks are authorized. Publication is not deployment. The published runtime replaced the host's temporary scheduler task after the supervised watcher started in the deployed container. The operator attests that the session-idle and Gamescope tasks are accepted and fully functional. Exact test details and image identities were not supplied with the attestation.
 
 ## Dependencies and consequential unknowns
 
