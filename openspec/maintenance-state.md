@@ -62,6 +62,6 @@ The 2026-10-26 review activated the GStreamer 1.28 change and adopted the gate d
 ## Not covered by this review
 
 - No Intel device probe, GPU encode, Moonlight session, audio, controller or idle-stop acceptance was run for the new digests. Publication is not acceptance.
-- The active [GStreamer 1.28 change](changes/gstreamer-1.28-series/proposal.md) still has its real-session task open. The operator subsequently accepted the [session idle and Gamescope change](changes/archive/2026-11-02-session-idle-and-gamescope/proposal.md) without providing exact test details or image identities. This does not establish acceptance for the new digests reviewed here.
+- The [GStreamer 1.28 change](changes/archive/2026-11-02-gstreamer-1.28-series/proposal.md) records the user's 2026-11-02 real-TV feature-level session attestation separately from full digest and codec acceptance. The operator also accepted the [session idle and Gamescope change](changes/archive/2026-11-02-session-idle-and-gamescope/proposal.md) without providing exact test details or image identities for that earlier attestation.
 - Distribution package closures were resolved by CI, not re-resolved locally, and base-image contents were compared by digest, not unpacked.
 - No host deployment or service restart was performed by this review.

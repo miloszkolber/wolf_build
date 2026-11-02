@@ -16,4 +16,4 @@
 
 - [x] 3.1 Obtain operator authorization for the media stack change before merging.
 - [x] 3.2 Publish the changed-input candidate and observe its checks and immutable tag.
-- [ ] 3.3 Obtain one real TV session record for capture, audio, input and idle stop. Publication is not acceptance.
+- [x] 3.3 Obtain one real TV session record for capture, audio, input and idle stop. On 2026-11-02 the user attested to personally testing these on the then-installed runtime. This is feature-level session evidence, not full codec, zero-copy or digest acceptance. Publication is not acceptance.

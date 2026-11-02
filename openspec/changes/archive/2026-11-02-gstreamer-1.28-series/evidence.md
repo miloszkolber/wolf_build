@@ -39,11 +39,9 @@ Resolver regressions check the highest stable patch within the selected series, 
 
 The first hosted build failed at GStreamer configure, before compiling: 1.28 plugin documentation resolves `plugins_cache_generator` before honouring `-Ddoc=disabled`, and `-Dauto_features=disabled` disabled the core subproject's `check` feature that defines it. The recipe now passes `-Dgstreamer:check=enabled`, the core submodule's option namespace. Tests, examples and documentation remain disabled. This adds the check library to the image as an accepted cost.
 
-A local build of the same resolved inputs completed with GStreamer `1.28.8`. Configure reported `gst-plugins-bad:va`, `qsv`, `aom`, `x265`, `gst-plugins-ugly:x264`, `gst-plugins-good:pulse` and `gst-plugins-base:gl` enabled, and all five GStreamer subprojects finished. The final image reports `GStreamer 1.28.8`, the media driver is the stripped 41,473,712-byte build, and the static final-image check including the synthetic audio conversion chain passed. The runtime supervision checks passed for normal shutdown and killed embedded Pulse.
+A local build of the same resolved inputs completed with GStreamer `1.28.8`. Configure reported `gst-plugins-bad:va`, `qsv`, `aom`, `x265`, `gst-plugins-ugly:x264`, `gst-plugins-good:pulse` and `gst-plugins-base:gl` enabled, and all five GStreamer subprojects finished. The final image reports `GStreamer 1.28.8`, its media driver is stripped, and the static final-image check including the synthetic audio conversion chain passed. The runtime supervision checks passed for normal shutdown and killed embedded Pulse.
 
-On the host's Arc Pro B50 the isolated Intel probe passed VA encoding for h264 (`vah264enc`), hevc (`vah265enc`) and av1 (`vaav1enc`). A disposable synthetic session with no Docker socket, network or production state selected `va` for all three codecs, used zero-copy on the render node, started the Wayland display and reached end of stream without pipeline parse errors. This is not Moonlight or game acceptance.
-
-The local image measured 270,749,751 bytes uncompressed against 343,062,643 for the previously deployed runtime. The difference combines the stripped driver with the new series and check library; it is not a measured registry or transfer saving.
+On an Intel target the isolated probe passed VA encoding for h264 (`vah264enc`), hevc (`vah265enc`) and av1 (`vaav1enc`). A disposable synthetic session with no Docker socket, network or production state selected `va` for all three codecs, used zero-copy on the render node, started the Wayland display and reached end of stream without pipeline parse errors. This is not Moonlight or game acceptance.
 
 ## Advisory status after the change
 
@@ -51,6 +49,10 @@ The local image measured 270,749,751 bytes uncompressed against 343,062,643 for 
 
 ## Canonical publication and rollout, 2026-10-26
 
-Runtime run `40413731495` passed for `a527a98`, including the final-image static check, the real supervisor/Pulse-failure probe, the shared-database SBOM and HIGH/CRITICAL gates and publication of immutable `stable-6a5053b4ebbb-37a8544b5803` with the same digest as `latest` (`sha256:012a58579ecb3f131951247f17ba580133260e012a3bf1d0580072022f456bb6`). The pulled canonical image reports GStreamer `1.28.8`, the 41,473,712-byte stripped media driver, and passes the static and supervisor checks again. Its isolated probe on the host Arc passed VA encoding for h264, hevc and av1.
+Runtime run `40413731495` passed for `a527a98`, including the final-image static check, the real supervisor/Pulse-failure probe, the shared-database SBOM and HIGH/CRITICAL gates and publication of immutable `stable-6a5053b4ebbb-37a8544b5803` with the same digest as `latest` (`sha256:012a58579ecb3f131951247f17ba580133260e012a3bf1d0580072022f456bb6`). The pulled canonical image reports GStreamer `1.28.8`, includes the stripped media driver, and passes the static and supervisor checks again. Its isolated Intel probe passed VA encoding for h264, hevc and av1.
 
-With no sessions or application containers active, the runtime alone was recreated from the canonical digest. Gate started it on control traffic; Docker health passed, Pulse answered, all four supervised components ran, and VA with zero-copy used the Arc by-path node. This verifies the image and its runtime wiring, not a Moonlight game session; the real TV acceptance in task 3.3 remains open.
+With no sessions or application containers active, the runtime alone was recreated from the canonical digest. Gate started it on control traffic; Docker health passed, Pulse answered, all four supervised components ran, and VA with zero-copy used the render node. This verifies that image and its runtime wiring, not a Moonlight game session.
+
+## User-attested TV session, 2026-11-02
+
+The user confirmed personally testing a real TV session covering capture, audio, input and idle stop on the runtime installed on 2026-11-02. That runtime was a later image than the 2026-10-26 canonical publication above; this attestation does not claim that earlier digest was tested in the TV session. The deployment-local record identifies the tested runtime. This is feature-level session evidence only, not blanket codec, zero-copy or full digest acceptance. The separate full-session criteria in [acceptance.md](../../../acceptance.md) remain applicable.
