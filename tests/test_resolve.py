@@ -38,9 +38,10 @@ class ResolverTests(unittest.TestCase):
         policy = resolve.gstreamer_policy("1.26.7")
         self.assertEqual(policy["series"], "1.28")
         self.assertEqual(policy["declared_version"], "1.26.7")
-        self.assertEqual(resolve.check_gstreamer_policy("1.28.8", policy), "1.28.8")
+        self.assertEqual(resolve.check_gstreamer_policy("1.28.9", policy), "1.28.9")
         with self.assertRaisesRegex(ValueError, "advisory floor"):
-            resolve.check_gstreamer_policy("1.28.7", policy)
+            resolve.check_gstreamer_policy("1.28.8", policy)
+        self.assertEqual(policy["review"]["advisories_through"], "2026-11-06")
         with patch.object(resolve, "GSTREAMER_REVIEW", {"series":"1.28"}):
             with self.assertRaisesRegex(ValueError, "dated advisory review"):
                 resolve.gstreamer_policy("1.26.7")
@@ -173,6 +174,9 @@ class ResolverTests(unittest.TestCase):
         owned = set(resolve.RUNTIME_PACKAGING)
         self.assertIn("docker/wolf.Dockerfile", owned)
         self.assertIn("scripts/resolve.py", owned)
+        self.assertIn("docker/patches/wolf-control-auth.patch", owned)
+        self.assertIn("scripts/apply-wolf-security.py", owned)
+        self.assertIn("docker/security-tests/control-auth.cpp", owned)
         for app_owned in ("docker/apps.Dockerfile", "scripts/resolve-apps.py", "scripts/test-app-session.sh", "scripts/check-docs.mjs"):
             self.assertNotIn(app_owned, owned)
 

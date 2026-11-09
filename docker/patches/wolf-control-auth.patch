@@ -1,0 +1,417 @@
+diff --git a/src/moonlight-protocol/crypto/crypto/utils.hpp b/src/moonlight-protocol/crypto/crypto/utils.hpp
+index da2c4d36..73189882 100644
+--- a/src/moonlight-protocol/crypto/crypto/utils.hpp
++++ b/src/moonlight-protocol/crypto/crypto/utils.hpp
+@@ -3,5 +3,9 @@
+ #include <memory>
+ #include <string>
+ 
+-void handle_openssl_error(const std::string &msg);
++/**
++ * Prints (and clears) the pending OpenSSL error queue, then throws a std::runtime_error with the given message.
++ * Call it whenever an OpenSSL call fails: its output buffers or context can't be trusted afterwards.
++ */
++[[noreturn]] void handle_openssl_error(const std::string &msg);
+ std::string uc_to_str(unsigned char *uc, int len);
+\ No newline at end of file
+diff --git a/src/moonlight-protocol/crypto/src/aes.hpp b/src/moonlight-protocol/crypto/src/aes.hpp
+index bccf519c..174f08e9 100644
+--- a/src/moonlight-protocol/crypto/src/aes.hpp
++++ b/src/moonlight-protocol/crypto/src/aes.hpp
+@@ -16,6 +16,8 @@ CIPHER_CTX_ptr init(const evp_cipher_st *chiper,
+                     bool is_encryption,
+                     bool padding = true) {
+   CIPHER_CTX_ptr ctx(EVP_CIPHER_CTX_new(), ::EVP_CIPHER_CTX_free);
++  if (!ctx)
++    handle_openssl_error("EVP_CIPHER_CTX_new failed");
+ 
+   if (is_encryption) {
+     if (EVP_EncryptInit_ex(ctx.get(),
+diff --git a/src/moonlight-protocol/crypto/src/crypto.cpp b/src/moonlight-protocol/crypto/src/crypto.cpp
+index 652b70fc..4a57f1fb 100644
+--- a/src/moonlight-protocol/crypto/src/crypto.cpp
++++ b/src/moonlight-protocol/crypto/src/crypto.cpp
+@@ -12,12 +12,16 @@ namespace crypto {
+ std::string sha256(std::string_view str) {
+   unsigned char md_value[EVP_MAX_MD_SIZE];
+   unsigned int md_len;
+-  auto mdctx = EVP_MD_CTX_new();
++  signature::EVP_MD_CTX_ptr mdctx(EVP_MD_CTX_new(), ::EVP_MD_CTX_free);
++  if (!mdctx)
++    handle_openssl_error("EVP_MD_CTX_new failed");
+ 
+-  EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr);
+-  EVP_DigestUpdate(mdctx, str.data(), str.size());
+-  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+-  EVP_MD_CTX_free(mdctx);
++  if (EVP_DigestInit_ex(mdctx.get(), EVP_sha256(), nullptr) != 1)
++    handle_openssl_error("EVP_DigestInit_ex failed");
++  if (EVP_DigestUpdate(mdctx.get(), str.data(), str.size()) != 1)
++    handle_openssl_error("EVP_DigestUpdate failed");
++  if (EVP_DigestFinal_ex(mdctx.get(), md_value, &md_len) != 1)
++    handle_openssl_error("EVP_DigestFinal_ex failed");
+ 
+   std::stringstream ss;
+   for (int i = 0; i < md_len; ++i) {
+@@ -167,11 +171,13 @@ std::string sign(std::string_view msg, std::string_view private_key) {
+ }
+ 
+ bool verify(std::string_view msg, std::string_view signature, std::string_view public_key) {
+-  auto p_key = signature::create_key(public_key, false);
+-  if (!p_key) {
++  // An unparseable or unusable public key can't have produced a valid signature
++  try {
++    auto p_key = signature::create_key(public_key, false);
++    return signature::verify(msg, signature, p_key.get(), EVP_sha256());
++  } catch (const std::runtime_error &) {
+     return false;
+   }
+-  return signature::verify(msg, signature, p_key.get(), EVP_sha256());
+ }
+ 
+ } // namespace crypto
+\ No newline at end of file
+diff --git a/src/moonlight-protocol/crypto/src/sign.hpp b/src/moonlight-protocol/crypto/src/sign.hpp
+index 9169d41e..87daeb79 100644
+--- a/src/moonlight-protocol/crypto/src/sign.hpp
++++ b/src/moonlight-protocol/crypto/src/sign.hpp
+@@ -44,20 +44,21 @@ inline bool verify(std::string_view msg, std::string_view signature, EVP_PKEY *k
+ using EVP_PKEY_ptr = std::unique_ptr<EVP_PKEY, decltype(&::EVP_PKEY_free)>;
+ 
+ inline EVP_PKEY_ptr create_key(std::string_view k, bool is_private) {
+-  BIO *bio = BIO_new(BIO_s_mem());
++  std::unique_ptr<BIO, decltype(&::BIO_free)> bio(BIO_new(BIO_s_mem()), ::BIO_free);
++  if (!bio)
++    handle_openssl_error("BIO_new failed");
+ 
+-  if (BIO_write(bio, k.data(), k.size()) <= 0)
++  if (BIO_write(bio.get(), k.data(), k.size()) <= 0)
+     handle_openssl_error("BIO_write failed");
+ 
+   EVP_PKEY *p_key = nullptr;
+   if (is_private)
+-    PEM_read_bio_PrivateKey(bio, &p_key, nullptr, nullptr);
++    PEM_read_bio_PrivateKey(bio.get(), &p_key, nullptr, nullptr);
+   else
+-    PEM_read_bio_PUBKEY(bio, &p_key, nullptr, nullptr);
++    PEM_read_bio_PUBKEY(bio.get(), &p_key, nullptr, nullptr);
+   if (p_key == nullptr)
+-    handle_openssl_error("PEM_read_bio_PrivateKey failed");
++    handle_openssl_error(is_private ? "PEM_read_bio_PrivateKey failed" : "PEM_read_bio_PUBKEY failed");
+ 
+-  BIO_free(bio);
+   return {p_key, ::EVP_PKEY_free};
+ }
+ } // namespace signature
+diff --git a/src/moonlight-protocol/crypto/src/utils.cpp b/src/moonlight-protocol/crypto/src/utils.cpp
+index 21507475..b45fd57a 100644
+--- a/src/moonlight-protocol/crypto/src/utils.cpp
++++ b/src/moonlight-protocol/crypto/src/utils.cpp
+@@ -1,12 +1,10 @@
+-#include <iostream>
+ #include <openssl/err.h>
+-#include <ostream>
+ #include <stdexcept>
+ #include <string>
+ 
+ void handle_openssl_error(const std::string &msg) {
+   ERR_print_errors_fp(stderr);
+-  std::cout << msg << std::endl;
++  throw std::runtime_error(msg);
+ }
+ 
+ std::string uc_to_str(unsigned char *uc, int len) {
+diff --git a/src/moonlight-server/control/control.cpp b/src/moonlight-server/control/control.cpp
+index 07c21296..eb78516c 100644
+--- a/src/moonlight-server/control/control.cpp
++++ b/src/moonlight-server/control/control.cpp
+@@ -86,8 +86,13 @@ bool encrypt_and_send(std::string_view payload,
+                       std::string_view aes_key,
+                       immer::box<std::shared_ptr<ENetPeer>> connected_client) {
+   if (auto enet_client = connected_client->get()) {
+-    auto encrypted = control::encrypt_packet(aes_key, 0, payload); // TODO: seq?
+-    return send_packet({(char *)encrypted.get(), encrypted->full_size()}, enet_client);
++    try {
++      auto encrypted = control::encrypt_packet(aes_key, 0, payload); // TODO: seq?
++      return send_packet({(char *)encrypted.get(), encrypted->full_size()}, enet_client);
++    } catch (const std::runtime_error &e) {
++      logs::log(logs::warning, "[ENET] Unable to encrypt outgoing packet: {}", e.what());
++      return false;
++    }
+   } else {
+     logs::log(logs::warning, "[ENET] Failed to send packet, client is not connected");
+     return false;
+diff --git a/src/moonlight-server/gst-plugin/audio.hpp b/src/moonlight-server/gst-plugin/audio.hpp
+index 264437a8..50fc75b9 100644
+--- a/src/moonlight-server/gst-plugin/audio.hpp
++++ b/src/moonlight-server/gst-plugin/audio.hpp
+@@ -113,7 +113,17 @@ static GstBufferList *split_into_rtp(gst_rtp_moonlight_pay_audio *rtpmoonlightpa
+ 
+   GstBufferList *rtp_packets = gst_buffer_list_new();
+ 
+-  auto rtp_audio_buf = create_rtp_audio_buffer(*rtpmoonlightpay, inbuf);
++  GstBuffer *rtp_audio_buf;
++  try {
++    rtp_audio_buf = create_rtp_audio_buffer(*rtpmoonlightpay, inbuf);
++  } catch (const std::exception &e) {
++    // Encrypting failed (OpenSSL error, or an IV that isn't a number): drop this packet
++    if (!rtpmoonlightpay->encrypt_failed) {
++      rtpmoonlightpay->encrypt_failed = true;
++      logs::log(logs::warning, "Unable to encrypt audio packet, dropping audio: {}", e.what());
++    }
++    return rtp_packets;
++  }
+   gst_buffer_list_add(rtp_packets, rtp_audio_buf);
+ 
+   // save the payload locally
+diff --git a/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.cpp b/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.cpp
+index 92a64f25..c0dd4c64 100644
+--- a/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.cpp
++++ b/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.cpp
+@@ -140,6 +140,7 @@ static void gst_rtp_moonlight_pay_audio_init(gst_rtp_moonlight_pay_audio *rtpmoo
+   rtpmoonlightpay_audio->cur_seq_number = 0;
+ 
+   rtpmoonlightpay_audio->encrypt = true;
++  rtpmoonlightpay_audio->encrypt_failed = false;
+ 
+   rtpmoonlightpay_audio->packet_duration = 5;
+   rtpmoonlightpay_audio->packets_buffer = new unsigned char *[AUDIO_TOTAL_SHARDS];
+diff --git a/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.hpp b/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.hpp
+index 2707a983..78afdb68 100644
+--- a/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.hpp
++++ b/src/moonlight-server/gst-plugin/gstrtpmoonlightpay_audio.hpp
+@@ -38,6 +38,8 @@ struct _gst_rtp_moonlight_pay_audio {
+   bool encrypt;
+   std::string aes_key;
+   std::string aes_iv;
++  /* Set after the first failed encryption, so a bad key or IV logs once, not once per packet */
++  bool encrypt_failed;
+ 
+   int packet_duration;
+ 
+diff --git a/src/moonlight-server/gst-plugin/utils.hpp b/src/moonlight-server/gst-plugin/utils.hpp
+index 743f9607..7254da55 100644
+--- a/src/moonlight-server/gst-plugin/utils.hpp
++++ b/src/moonlight-server/gst-plugin/utils.hpp
+@@ -124,8 +124,8 @@ static GstBuffer *encrypt_payload(const std::string &aes_key, const std::string
+   gst_buffer_map(inbuf, &info, GST_MAP_READ);
+   std::string packet_content((char *)info.data, gst_buffer_get_size(inbuf));
+ 
+-  auto encrypted = crypto::aes_encrypt_cbc(packet_content, aes_key, aes_iv, true);
+-
+   gst_buffer_unmap(inbuf, &info);
++
++  auto encrypted = crypto::aes_encrypt_cbc(packet_content, aes_key, aes_iv, true);
+   return gst_buffer_new_and_fill(encrypted.size(), encrypted.c_str());
+ }
+\ No newline at end of file
+diff --git a/src/moonlight-server/rest/endpoints.hpp b/src/moonlight-server/rest/endpoints.hpp
+index 613f6f84..f0f006a3 100644
+--- a/src/moonlight-server/rest/endpoints.hpp
++++ b/src/moonlight-server/rest/endpoints.hpp
+@@ -126,7 +126,14 @@ std::shared_ptr<boost::promise<XMLResult>> pair_phase1(const immer::box<state::A
+   future_pin->get_future().then(
+       [state, salt, client_cert_str, cache_key, future_result](boost::future<std::string> fut_pin) {
+         auto server_pem = x509::get_cert_pem(state->host->server_cert);
+-        auto result = moonlight::pair::get_server_cert(fut_pin.get(), salt, server_pem);
++        std::pair<XML, std::string> result;
++        try {
++          result = moonlight::pair::get_server_cert(fut_pin.get(), salt, server_pem);
++        } catch (const std::runtime_error &e) {
++          logs::log(logs::warning, "Pairing failed (phase 1): {}", e.what());
++          future_result->set_value({SimpleWeb::StatusCode::client_error_bad_request, fail_pair("Pairing failed")});
++          return;
++        }
+ 
+         auto client_cert_parsed = crypto::hex_to_str(client_cert_str, true);
+ 
+@@ -153,8 +160,14 @@ XMLResult pair_phase2(const immer::box<state::AppState> &state,
+   client_cache.last_phase = state::PAIR_PHASE::CLIENTCHALLENGE;
+ 
+   auto server_cert_signature = x509::get_cert_signature(state->host->server_cert);
+-  auto [xml, server_secret_pair] =
+-      moonlight::pair::send_server_challenge(client_cache.aes_key, client_challenge, server_cert_signature);
++  std::pair<XML, std::pair<std::string, std::string>> challenge;
++  try {
++    challenge = moonlight::pair::send_server_challenge(client_cache.aes_key, client_challenge, server_cert_signature);
++  } catch (const std::runtime_error &e) {
++    logs::log(logs::warning, "Pairing failed (phase 2): {}", e.what());
++    return {SimpleWeb::StatusCode::client_error_bad_request, fail_pair("Invalid client challenge")};
++  }
++  auto [xml, server_secret_pair] = challenge;
+ 
+   auto [server_secret, server_challenge] = server_secret_pair;
+   client_cache.server_secret = server_secret;
+@@ -175,10 +188,17 @@ XMLResult pair_phase3(const immer::box<state::AppState> &state,
+   }
+   client_cache.last_phase = state::PAIR_PHASE::SERVERCHALLENGERESP;
+ 
+-  auto [xml, client_hash] = moonlight::pair::get_client_hash(client_cache.aes_key,
+-                                                             client_cache.server_secret.value(),
+-                                                             server_challenge,
+-                                                             x509::get_pkey_content(state->host->server_pkey));
++  std::pair<XML, std::string> hash_result;
++  try {
++    hash_result = moonlight::pair::get_client_hash(client_cache.aes_key,
++                                                   client_cache.server_secret.value(),
++                                                   server_challenge,
++                                                   x509::get_pkey_content(state->host->server_pkey));
++  } catch (const std::runtime_error &e) {
++    logs::log(logs::warning, "Pairing failed (phase 3): {}", e.what());
++    return {SimpleWeb::StatusCode::client_error_bad_request, fail_pair("Invalid server challenge response")};
++  }
++  auto [xml, client_hash] = hash_result;
+   client_cache.client_hash = client_hash;
+   state->pairing_cache->update([&](const immer::map<std::string, state::PairCache> &pairing_cache) {
+     return pairing_cache.set(cache_key, client_cache);
+diff --git a/tests/testControl.cpp b/tests/testControl.cpp
+index a1c1a114..ad96fd42 100644
+--- a/tests/testControl.cpp
++++ b/tests/testControl.cpp
+@@ -28,6 +28,9 @@ TEST_CASE("Control AES Encryption", "CONTROL") {
+     auto decrypted = decrypt_packet(encrypted_packet, aes_key);
+     REQUIRE_THAT(decrypted, Equals(payload));
+     REQUIRE_THAT(packet_type_to_str(((ControlPacket *)decrypted.data())->type), Equals("IDR_FRAME"));
++
++    encrypted_packet.gcm_tag[0] ^= 1;
++    REQUIRE_THROWS_AS(decrypt_packet(encrypted_packet, aes_key), std::runtime_error);
+   }
+ 
+   SECTION("29 bytes") { // original packet: 010019000100000021DBB8DC0590AF3A2B20BCE5A347DE31D366E5B9C5"
+diff --git a/tests/testCrypto.cpp b/tests/testCrypto.cpp
+index def0ec15..07d59904 100644
+--- a/tests/testCrypto.cpp
++++ b/tests/testCrypto.cpp
+@@ -105,6 +105,16 @@ TEST_CASE("AES gcm", "[Crypto]") {
+ 
+   auto [encrypted2, tag2] = crypto::aes_encrypt_gcm(msg, key, iv, (int)iv.size(), false);
+   REQUIRE(crypto::aes_decrypt_gcm(encrypted2, key, tag2, iv, iv.size(), false) == msg);
++
++  SECTION("Tampered tag is rejected") {
++    tag2[0] ^= 1;
++    REQUIRE_THROWS_AS(crypto::aes_decrypt_gcm(encrypted2, key, tag2, iv, iv.size(), false), std::runtime_error);
++  }
++
++  SECTION("Tampered ciphertext is rejected") {
++    encrypted2[0] ^= 1;
++    REQUIRE_THROWS_AS(crypto::aes_decrypt_gcm(encrypted2, key, tag2, iv, iv.size(), false), std::runtime_error);
++  }
+ }
+ 
+ TEST_CASE("AES cbc", "[Crypto]") {
+@@ -116,6 +126,44 @@ TEST_CASE("AES cbc", "[Crypto]") {
+   REQUIRE(crypto::aes_decrypt_cbc(encrypted, key, iv, true) == msg);
+ }
+ 
++TEST_CASE("OpenSSL failures throw", "[Crypto]") {
++  auto key = "0123456789012345"s;
++  auto msg = "a message to be sent!"s;
++  auto iv = "1234567890123456"s;
++
++  SECTION("CBC: wrong key fails the padding check") {
++    auto encrypted = crypto::aes_encrypt_cbc(msg, key, iv, true);
++    REQUIRE_THROWS_AS(crypto::aes_decrypt_cbc(encrypted, "5432109876543210"s, iv, true), std::runtime_error);
++  }
++
++  SECTION("ECB: unpadded ciphertext that isn't a whole number of blocks") {
++    REQUIRE_THROWS_AS(crypto::aes_decrypt_ecb("not a multiple of 16"s, key, iv, false), std::runtime_error);
++  }
++
++  SECTION("GCM: tampered tag") {
++    auto [encrypted, tag] = crypto::aes_encrypt_gcm(msg, key, iv, (int)iv.size(), false);
++    tag[0] ^= 0x01;
++    REQUIRE_THROWS_AS(crypto::aes_decrypt_gcm(encrypted, key, tag, iv, (int)iv.size(), false), std::runtime_error);
++  }
++
++  SECTION("Sign: unparseable private key") {
++    REQUIRE_THROWS_AS(crypto::sign(msg, "not a PEM key"), std::runtime_error);
++  }
++
++  SECTION("Verify: unparseable public key is a failed verification, not an exception") {
++    REQUIRE_FALSE(crypto::verify(msg, "a signature"s, "not a PEM key"));
++  }
++
++  SECTION("The message names the failing call") {
++    try {
++      crypto::aes_decrypt_ecb("not a multiple of 16"s, key, iv, false);
++      FAIL("expected a throw");
++    } catch (const std::runtime_error &e) {
++      REQUIRE_THAT(e.what(), Catch::Matchers::Equals("EVP_DecryptFinal_ex failed"));
++    }
++  }
++}
++
+ TEST_CASE("OpenSSL sign", "[Crypto]") {
+   SECTION("Manually created") { /* Generated using: `openssl genrsa -out mykey.pem 1024` */
+     auto private_key = "-----BEGIN RSA PRIVATE KEY-----\n"
+diff --git a/tests/testGSTPlugin.cpp b/tests/testGSTPlugin.cpp
+index 9a3c8593..79c2782a 100644
+--- a/tests/testGSTPlugin.cpp
++++ b/tests/testGSTPlugin.cpp
+@@ -499,6 +499,30 @@ TEST_CASE_METHOD(GStreamerTestsFixture, "Audio RTP packet creation", "[GSTPlugin
+   }
+ }
+ 
++TEST_CASE_METHOD(GStreamerTestsFixture, "Audio RTP with an IV that isn't a number", "[GSTPlugin]") {
++  auto rtpmoonlightpay = std::shared_ptr<gst_rtp_moonlight_pay_audio>(
++      (gst_rtp_moonlight_pay_audio *)g_object_new(gst_TYPE_rtp_moonlight_pay_audio, nullptr),
++      g_object_unref);
++
++  rtpmoonlightpay->encrypt = true;
++  rtpmoonlightpay->aes_key = "0123456789012345";
++  rtpmoonlightpay->aes_iv = "notanumber";
++
++  auto payload_str = "TUNZ TUNZ TUMP TUMP!"s;
++  for (int i = 0; i < 2; i++) {
++    auto payload = gst_buffer_new_and_fill(payload_str.size(), payload_str.c_str());
++    auto rtp_packets = audio::split_into_rtp(rtpmoonlightpay.get(), payload);
++
++    // The packet is dropped, and the sequence number isn't consumed
++    REQUIRE(gst_buffer_list_length(rtp_packets) == 0);
++    REQUIRE(rtpmoonlightpay->cur_seq_number == 0);
++    REQUIRE(rtpmoonlightpay->encrypt_failed);
++
++    gst_buffer_list_unref(rtp_packets);
++    gst_buffer_unref(payload);
++  }
++}
++
+ TEST_CASE_METHOD(GStreamerTestsFixture, "Audio RTP without encryption", "[GSTPlugin]") {
+   auto rtpmoonlightpay = std::shared_ptr<gst_rtp_moonlight_pay_audio>(
+       (gst_rtp_moonlight_pay_audio *)g_object_new(gst_TYPE_rtp_moonlight_pay_audio, nullptr),
+diff --git a/tests/testMoonlight.cpp b/tests/testMoonlight.cpp
+index 6b3dd242..214b3a99 100644
+--- a/tests/testMoonlight.cpp
++++ b/tests/testMoonlight.cpp
+@@ -463,6 +463,31 @@ TEST_CASE("HTTP Pairing", "[MoonlightProtocol]") {
+     REQUIRE(phase_4.status == SimpleWeb::StatusCode::client_error_bad_request);
+   }
+ 
++  SECTION("Malformed challenges are rejected") {
++    auto phase_1 = endpoints::pair_phase1(app_state,
++                                          "0.0.0.0",
++                                          "1.1.1.1",
++                                          moonlight_data.client_cert_base64,
++                                          moonlight_data.salt,
++                                          cache_key);
++    REQUIRE(phase_1->get_future().get().status == SimpleWeb::StatusCode::success_ok);
++    auto client_cache = *(app_state->pairing_cache->load().get().find(cache_key));
++
++    // 15 bytes: not a whole AES block, so the unpadded ECB decrypt fails
++    auto bad_challenge = std::string("0102030405060708090a0b0c0d0e0f");
++    auto bad_phase_2 = endpoints::pair_phase2(app_state, client_cache, bad_challenge, cache_key);
++    REQUIRE(bad_phase_2.status == SimpleWeb::StatusCode::client_error_bad_request);
++    REQUIRE(bad_phase_2.xml.get<int>("root.paired") == 0);
++
++    client_cache.last_phase = state::PAIR_PHASE::GETSERVERCERT;
++    REQUIRE(endpoints::pair_phase2(app_state, client_cache, moonlight_data.client_challenge, cache_key).status ==
++            SimpleWeb::StatusCode::success_ok);
++
++    auto bad_phase_3 = endpoints::pair_phase3(app_state, client_cache, bad_challenge, cache_key);
++    REQUIRE(bad_phase_3.status == SimpleWeb::StatusCode::client_error_bad_request);
++    REQUIRE(bad_phase_3.xml.get<int>("root.paired") == 0);
++  }
++
+   SECTION("Testing null params") {
+     auto phase_1 = endpoints::pair_phase1(app_state, "0.0.0.0", "1.1.1.1", {}, {}, cache_key);
+     auto result = phase_1->get_future().get();

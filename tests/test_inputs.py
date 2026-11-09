@@ -100,7 +100,7 @@ class LockedInputsTests(unittest.TestCase):
                 with self.assertRaises(ValueError): resolve.discover_intel()
 
     def test_lock_expands_declared_compatibility_and_unpinned_cmake(self):
-        inputs={"wolf":{"sha":"a"*40},"gstreamer":{"version":"1.28.8"},"interpipe":{"sha":"b"*40},"intel":{"media_driver":"intel-media-26.3.5","vpl_gpu_rt":"intel-onevpl-26.3.5","libvpl":"v2.17.0"}}
+        inputs={"wolf":{"sha":"a"*40},"gstreamer":{"version":"1.28.9"},"interpipe":{"sha":"b"*40},"intel":{"media_driver":"intel-media-26.3.5","vpl_gpu_rt":"intel-onevpl-26.3.5","libvpl":"v2.17.0"}}
         original=copy.deepcopy(inputs)
         def api(path):
             if "releases/tags" in path: return {"body":"intel-gmmlib-22.10.2 intel/libva/releases/tag/2.24.1 intel/libvpl/releases/tag/v2.17.0"}
@@ -126,7 +126,7 @@ class LockedInputsTests(unittest.TestCase):
         self.assertIn("digest",inputs["toolchain"])
         self.assertEqual(inputs["gstreamer"]["declared_version"], "1.26.7")
         self.assertEqual(inputs["gstreamer"]["series"], "1.28")
-        self.assertEqual(inputs["gstreamer"]["review"]["minimum_version"], "1.28.8")
+        self.assertEqual(inputs["gstreamer"]["review"]["minimum_version"], "1.28.9")
 
     def test_base_must_resolve_for_target_architecture(self):
         class Response:

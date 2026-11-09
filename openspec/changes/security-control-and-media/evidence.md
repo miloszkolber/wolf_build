@@ -1,0 +1,11 @@
+# Evidence
+
+The reviewed Wolf input is upstream commit `db709cfd3f0f49dfd7d00495940119309692b535`. The upstream [PR 558](https://github.com/games-on-whales/wolf/pull/558) diff applies cleanly to that source. The local follow-up adds binary GCM tag sizing and pairing exception boundaries; it does not merge the beta branch.
+
+In the development container, the complete PR and local follow-up applied after exact source-hash verification. Focused C++ regressions compiled upstream control, crypto and pairing protocol code against OpenSSL. They passed valid control packets, tags both with and without NUL bytes, altered tags and ciphertext, wrong keys, short tags, invalid IV lengths, a complete valid four-phase protocol exchange and malformed phase-2/3 challenges. The tests substitute minimal definitions for unrelated types. They do not run the HTTP or ENet servers or prove final-image behavior.
+
+The development container also compiled upstream audio packetization and buffer encryption against extracted GStreamer and OpenSSL libraries. A valid audio buffer round-tripped through the generated encrypted RTP payload. A nonnumeric IV produced empty packet lists on repeated attempts without consuming a sequence number. The harness substitutes FEC and logging and does not test FEC or a live GStreamer pipeline.
+
+After expanding the backport, the development container ran `python3 -m unittest discover -s tests`: 83 tests passed, including an expected rejected patch. `bun scripts/check-docs.mjs` checked 40 Markdown files with no failures. `OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict` passed four specifications and this change. Schema validation is not runtime acceptance.
+
+An image build, complete upstream test suite, HTTP endpoint fault injection, final-image checks, vulnerability scan, publication, Intel hardware and Moonlight session acceptance have not been executed for this change. The exact upstream GStreamer tag and source must still be resolved and the complete candidate built and checked by the normal pipeline. Packet-size validation before authentication and GCM nonce reuse remain separate security concerns requiring compatibility review.

@@ -32,10 +32,10 @@ GSTREAMER_SERIES = "1.26"
 # floor, not a calendar refresh salt or a second automatic security scanner.
 GSTREAMER_REVIEW = {
     "series": "1.28",
-    "minimum_version": "1.28.8",
-    "reviewed_at": "2026-10-26",
-    "advisories_through": "2026-10-08",
-    "reason": "GStreamer 1.26 is unmaintained; reviewed core/plugin advisories require 1.28.8",
+    "minimum_version": "1.28.9",
+    "reviewed_at": "2026-11-09",
+    "advisories_through": "2026-11-06",
+    "reason": "GStreamer 1.26 is unmaintained; reviewed parser and RTP advisories require 1.28.9",
 }
 INTEL_MEDIA_REPO = "intel/media-driver"
 INTEL_VPL_REPO = "intel/vpl-gpu-rt"
@@ -410,10 +410,23 @@ def lock_sources(manifest, compositor_override=""):
 RUNTIME_PACKAGING = (
     ".dockerignore",
     "docker/wolf.Dockerfile",
+    "docker/patches/wolf-control-auth.patch",
+    "docker/patches/wolf-control-boundaries.patch",
+    "docker/security-tests/control-auth.cpp",
+    "docker/security-tests/pairing.cpp",
+    "docker/security-tests/audio.cpp",
+    "docker/security-tests/core/input.hpp",
+    "docker/security-tests/helpers/utils.hpp",
+    "docker/security-tests/helpers/logger.hpp",
+    "docker/security-tests/immer/array.hpp",
+    "docker/security-tests/immer/box.hpp",
+    "docker/security-tests/immer/vector.hpp",
+    "docker/security-tests/moonlight/fec.hpp",
     "docker/runtime/wolf-session-idle.conf",
     "docker/runtime/wolf-audio-failure.conf",
     "docker/runtime/configure-supervisor.py",
     "scripts/build-inputs.py",
+    "scripts/apply-wolf-security.py",
     "scripts/build.sh",
     "scripts/check-runtime.py",
     "scripts/collect-rust-licenses.py",

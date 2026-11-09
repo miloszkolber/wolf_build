@@ -1,0 +1,68 @@
+--- a/src/moonlight-protocol/crypto/src/aes.hpp
++++ b/src/moonlight-protocol/crypto/src/aes.hpp
+@@ -113,6 +113,8 @@
+ }
+ 
+ std::string decrypt_authenticated(EVP_CIPHER_CTX *ctx, std::string_view ciphertext, std::string_view tag) {
++  if (tag.size() != AES_GCM_TAG_SIZE)
++    throw std::runtime_error("invalid GCM tag length");
+   int len;
+   auto cipher_length = (int)ciphertext.length();
+   /* plaintext will always be equal to or lesser than length of ciphertext*/
+--- a/src/moonlight-protocol/moonlight/control.hpp
++++ b/src/moonlight-protocol/moonlight/control.hpp
+@@ -399,7 +399,7 @@
+ 
+   return crypto::aes_decrypt_gcm(packet_data.encrypted_msg(),
+                                  crypto::hex_to_str(gcm_key.data(), true),
+-                                 packet_data.gcm_tag,
++                                 {packet_data.gcm_tag, GCM_TAG_SIZE},
+                                  {(char *)iv_data.data(), iv_data.size()},
+                                  GCM_TAG_SIZE);
+ }
+--- a/src/moonlight-server/rest/endpoints.hpp
++++ b/src/moonlight-server/rest/endpoints.hpp
+@@ -119,9 +119,15 @@
+   }
+ 
+   auto future_pin = std::make_shared<boost::promise<std::string>>();
+-  state->event_bus->fire_event( // Emit a signal and wait for the promise to be fulfilled
+-      immer::box<events::PairSignal>(
+-          events::PairSignal{.client_ip = client_ip, .host_ip = host_ip, .user_pin = future_pin}));
++  try {
++    state->event_bus->fire_event( // Emit a signal and wait for the promise to be fulfilled
++        immer::box<events::PairSignal>(
++            events::PairSignal{.client_ip = client_ip, .host_ip = host_ip, .user_pin = future_pin}));
++  } catch (const std::runtime_error &e) {
++    logs::log(logs::warning, "Pairing failed (request): {}", e.what());
++    future_result->set_value({SimpleWeb::StatusCode::client_error_bad_request, fail_pair("Pairing failed")});
++    return future_result;
++  }
+ 
+   future_pin->get_future().then(
+       [state, salt, client_cert_str, cache_key, future_result](boost::future<std::string> fut_pin) {
+@@ -220,12 +226,18 @@
+ 
+   auto client_sig = x509::get_cert_signature(client_cert);
+   auto public_key = x509::get_cert_public_key(client_cert);
+-  auto xml = moonlight::pair::client_pair(client_cache.aes_key,
+-                                          client_cache.server_challenge.value(),
+-                                          client_cache.client_hash.value(),
+-                                          client_secret,
+-                                          client_sig,
+-                                          public_key);
++  XML xml;
++  try {
++    xml = moonlight::pair::client_pair(client_cache.aes_key,
++                                       client_cache.server_challenge.value(),
++                                       client_cache.client_hash.value(),
++                                       client_secret,
++                                       client_sig,
++                                       public_key);
++  } catch (const std::runtime_error &e) {
++    logs::log(logs::warning, "Pairing failed (phase 4): {}", e.what());
++    return {SimpleWeb::StatusCode::client_error_bad_request, fail_pair("Pairing failed")};
++  }
+ 
+   auto is_paired = xml.get<int>("root.paired") == 1;
+   return {is_paired ? SimpleWeb::StatusCode::success_ok : SimpleWeb::StatusCode::client_error_bad_request, xml};

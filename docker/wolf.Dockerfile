@@ -40,6 +40,29 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     bash /compile-compositor.sh
 COPY .build/context/locked-sources.cmake /locked-sources.cmake
 COPY .build/context/sources/wolf/ /sources/wolf/
+ARG WOLF_SHA
+COPY scripts/apply-wolf-security.py /apply-wolf-security.py
+COPY docker/patches/wolf-control-auth.patch /wolf-control-auth.patch
+COPY docker/patches/wolf-control-boundaries.patch /wolf-control-boundaries.patch
+RUN python3 /apply-wolf-security.py /sources/wolf "$WOLF_SHA" /wolf-control-auth.patch /wolf-control-boundaries.patch
+COPY docker/security-tests/ /wolf-security-tests/
+RUN g++ -std=gnu++20 -I/wolf-security-tests -I/sources/wolf/src/moonlight-protocol \
+    -I/sources/wolf/src/moonlight-protocol/crypto \
+    /wolf-security-tests/control-auth.cpp /sources/wolf/src/moonlight-protocol/crypto/src/crypto.cpp \
+    /sources/wolf/src/moonlight-protocol/crypto/src/utils.cpp -lcrypto -o /tmp/control-auth-test \
+    && /tmp/control-auth-test && rm /tmp/control-auth-test \
+    && g++ -std=gnu++20 -I/wolf-security-tests -I/sources/wolf/src/moonlight-protocol \
+    -I/sources/wolf/src/moonlight-protocol/crypto /wolf-security-tests/pairing.cpp \
+    /sources/wolf/src/moonlight-protocol/moonlight.cpp /sources/wolf/src/moonlight-protocol/crypto/src/crypto.cpp \
+    /sources/wolf/src/moonlight-protocol/crypto/src/utils.cpp -lcrypto -o /tmp/pairing-test \
+    && /tmp/pairing-test && rm /tmp/pairing-test \
+    && g++ -std=gnu++20 -I/wolf-security-tests -I/sources/wolf/src/moonlight-server \
+    -I/sources/wolf/src/moonlight-protocol -I/sources/wolf/src/moonlight-protocol/crypto \
+    $(pkg-config --cflags gstreamer-base-1.0) /wolf-security-tests/audio.cpp \
+    /sources/wolf/src/moonlight-protocol/crypto/src/crypto.cpp \
+    /sources/wolf/src/moonlight-protocol/crypto/src/utils.cpp \
+    $(pkg-config --libs gstreamer-base-1.0) -lcrypto -o /tmp/audio-test \
+    && /tmp/audio-test && rm /tmp/audio-test
 # All FetchContent dependencies have wolf-* names. build-inputs.py prepares
 # this subset without moving a Wolf-only change ahead of the Intel builds.
 COPY .build/context/wolf-dependencies/ /sources/
