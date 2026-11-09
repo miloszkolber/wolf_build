@@ -6,10 +6,12 @@ from unittest.mock import patch
 import io
 import sys
 import hashlib
+import shutil
 from urllib.error import HTTPError
 from contextlib import redirect_stdout
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import discovery
 spec = importlib.util.spec_from_file_location("apps", Path(__file__).resolve().parents[1] / "scripts/resolve-apps.py")
 apps = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(apps)
@@ -73,14 +75,14 @@ class ApplicationInputsTests(unittest.TestCase):
             (root / ".dockerignore").write_text("context")
             (root / "docker/apps.Dockerfile").write_text("FROM test")
             (root / "scripts/resolve-apps.py").write_text("resolver")
-            (root / "scripts/resolve.py").write_text("discovery")
+            (root / "scripts/discovery.py").write_text("discovery")
             script = root / "docker/apps/launch.sh"
             script.write_text("first")
             first = apps.recipe_hash(root, "steam")
             script.write_text("second")
             self.assertNotEqual(first, apps.recipe_hash(root, "steam"))
             second = apps.recipe_hash(root, "steam")
-            (root / "scripts/resolve.py").write_text("changed-discovery")
+            (root / "scripts/discovery.py").write_text("changed-discovery")
             self.assertNotEqual(second, apps.recipe_hash(root, "steam"))
             third = apps.recipe_hash(root, "steam")
             (root / ".dockerignore").write_text("changed context")
@@ -90,6 +92,44 @@ class ApplicationInputsTests(unittest.TestCase):
             (root / "docker/packages/heroic.txt").write_text("changed Heroic packages")
             self.assertEqual(steam, apps.recipe_hash(root, "steam"))
             self.assertNotEqual(heroic, apps.recipe_hash(root, "heroic"))
+
+    def test_wolf_only_resolver_edits_do_not_change_application_recipe(self):
+        source = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            shutil.copytree(source / "docker", root / "docker")
+            shutil.copytree(source / "scripts", root / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+            shutil.copy2(source / ".dockerignore", root / ".dockerignore")
+            before = {app: apps.recipe_hash(root, app) for app in ("steam", "heroic")}
+            resolver = root / "scripts/resolve.py"
+            original = resolver.read_text()
+            changed = original.replace('"minimum_version": "1.28.9"', '"minimum_version": "1.28.8"').replace('    "scripts/apply-wolf-security.py",\n', '')
+            self.assertNotEqual(original, changed)
+            resolver.write_text(changed)
+            self.assertEqual(before, {app: apps.recipe_hash(root, app) for app in before})
+            helper = root / "scripts/discovery.py"
+            helper.write_text(helper.read_text() + "\n# discovery changed\n")
+            for app in before:
+                self.assertNotEqual(before[app], apps.recipe_hash(root, app))
+
+    def test_application_shared_discovery_retries_and_rejects_missing_digest(self):
+        with patch.object(discovery, "urlopen", side_effect=[TimeoutError("timeout"), io.BytesIO(b'{"images": []}')]) as request, \
+             patch.object(discovery.time, "sleep"):
+            with self.assertRaisesRegex(ValueError, "no amd64 linux digest"):
+                apps.discover_base_digest()
+            self.assertEqual(request.call_count, 2)
+        with patch.object(discovery, "urlopen", side_effect=HTTPError("url", 404, "missing", {}, None)) as request:
+            with self.assertRaises(HTTPError):
+                apps.github_api("repos/example/release")
+            self.assertEqual(request.call_count, 1)
+
+    def test_shared_discovery_changes_trigger_application_workflows(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/apps.yml").read_text()
+        filters = [line for line in workflow.splitlines() if line.strip().startswith("paths:")]
+        self.assertEqual(len(filters), 2)
+        for line in filters:
+            self.assertIn("'scripts/discovery.py'", line)
+            self.assertNotIn("'scripts/resolve.py'", line)
 
     def test_steam_discovery_never_resolves_or_acquires_heroic(self):
         with tempfile.TemporaryDirectory() as directory, \

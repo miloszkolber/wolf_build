@@ -2,6 +2,7 @@ import importlib.util
 import unittest
 import tempfile
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
@@ -9,6 +10,7 @@ from urllib.error import URLError
 import io
 import json
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 SPEC = importlib.util.spec_from_file_location("resolve", Path(__file__).parents[1] / "scripts" / "resolve.py")
 resolve = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(resolve)
@@ -174,6 +176,7 @@ class ResolverTests(unittest.TestCase):
         owned = set(resolve.RUNTIME_PACKAGING)
         self.assertIn("docker/wolf.Dockerfile", owned)
         self.assertIn("scripts/resolve.py", owned)
+        self.assertIn("scripts/discovery.py", owned)
         self.assertIn("docker/patches/wolf-control-auth.patch", owned)
         self.assertIn("scripts/apply-wolf-security.py", owned)
         self.assertIn("docker/security-tests/control-auth.cpp", owned)

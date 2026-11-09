@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-from resolve import BASE_IMAGE, discover_base_digest, github_api
+from discovery import BASE_IMAGE, discover_base_digest, github_api
 
 
 def heroic_asset(release):
@@ -29,7 +29,7 @@ def heroic_asset(release):
 
 def recipe_hash(root, app):
     digest = hashlib.sha256()
-    paths = [root / ".dockerignore", root / "docker/apps.Dockerfile", root / "scripts/resolve-apps.py", root / "scripts/resolve.py",
+    paths = [root / ".dockerignore", root / "docker/apps.Dockerfile", root / "scripts/resolve-apps.py", root / "scripts/discovery.py",
              *(root / "scripts" / name for name in ("package-plan.sh", "resolve-packages.sh", "lock-packages.py", "install-packages.sh")),
              root / "docker/packages/common.txt", root / f"docker/packages/{app}.txt",
              *sorted((root / "docker/apps").glob("*"))]

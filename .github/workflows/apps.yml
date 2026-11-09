@@ -2,9 +2,9 @@ name: Build applications
 on:
   push:
     branches: [main]
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/test-app-audio.sh', 'scripts/resolve.py', 'scripts/publish.py', 'scripts/scan-image.sh', 'tests/**', '.github/workflows/apps.yml', '.github/workflows/app.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/discovery.py', 'scripts/test-app-session.sh', 'scripts/test-app-audio.sh', 'scripts/publish.py', 'scripts/scan-image.sh', 'tests/**', '.github/workflows/apps.yml', '.github/workflows/app.yml']
   pull_request:
-    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/test-app-session.sh', 'scripts/test-app-audio.sh', 'scripts/resolve.py', 'scripts/publish.py', 'scripts/scan-image.sh', 'tests/**', '.github/workflows/apps.yml', '.github/workflows/app.yml']
+    paths: ['.dockerignore', 'docker/apps.Dockerfile', 'docker/apps/**', 'docker/packages/**', 'scripts/*packages*', 'scripts/package-plan.sh', 'scripts/resolve-apps.py', 'scripts/discovery.py', 'scripts/test-app-session.sh', 'scripts/test-app-audio.sh', 'scripts/publish.py', 'scripts/scan-image.sh', 'tests/**', '.github/workflows/apps.yml', '.github/workflows/app.yml']
   schedule:
     - cron: '30 3 * * 1'
   workflow_dispatch:

@@ -9,8 +9,9 @@ import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
-from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+import discovery
 
 MANIFEST_VERSION = 1
 WOLF_REPO = "games-on-whales/wolf"
@@ -40,7 +41,7 @@ GSTREAMER_REVIEW = {
 INTEL_MEDIA_REPO = "intel/media-driver"
 INTEL_VPL_REPO = "intel/vpl-gpu-rt"
 INTEL_LIBVPL_REPO = "intel/libvpl"
-BASE_IMAGE = "ubuntu:26.04"
+BASE_IMAGE = discovery.BASE_IMAGE
 
 
 def is_full_sha(value):
@@ -155,25 +156,11 @@ def build_manifest(wolf_sha, gstreamer_version, compositor_sha, interpipe_sha, m
 
 
 def fetch(request, timeout=30):
-    """Bound and retry small upstream metadata reads, never missing artifacts."""
-    for attempt in range(3):
-        try:
-            with urlopen(request, timeout=timeout) as response:
-                return response.read()
-        except HTTPError as err:
-            if err.code not in {429, 500, 502, 503, 504} or attempt == 2:
-                raise
-        except (URLError, TimeoutError, ConnectionError):
-            if attempt == 2:
-                raise
-        time.sleep(2 ** attempt)
+    return discovery.fetch(request, timeout, opener=urlopen, sleep=time.sleep)
 
 
 def github_api(path):
-    headers = {"Accept": "application/vnd.github+json", "User-Agent": "wolf_build"}
-    if os.getenv("GH_TOKEN"):
-        headers["Authorization"] = "Bearer " + os.environ["GH_TOKEN"]
-    return json.loads(fetch(Request("https://api.github.com/" + path, headers=headers)))
+    return discovery.github_api(path, read=fetch)
 
 
 def git_ls_remote(url, *refs):
@@ -244,18 +231,11 @@ def discover_intel():
 
 
 def discover_base_digest():
-    return hub_digest("ubuntu", "26.04")
+    return discovery.discover_base_digest(lookup=hub_digest)
 
 
 def hub_digest(image, tag):
-    req = Request(f"https://hub.docker.com/v2/repositories/library/{image}/tags/{tag}", headers={"User-Agent": "wolf_build"})
-    payload = json.loads(fetch(req))
-    for image in payload.get("images", []):
-        if image.get("architecture") == "amd64" and image.get("os") == "linux":
-            digest = image.get("digest", "")
-            if re.fullmatch(r"sha256:[0-9a-f]{64}", digest or ""):
-                return digest
-    raise ValueError(f"{image}:{tag} has no amd64 linux digest")
+    return discovery.hub_digest(image, tag, read=fetch)
 
 
 def emit(values):
@@ -435,6 +415,7 @@ RUNTIME_PACKAGING = (
     "scripts/compile-runtime.sh",
     "scripts/compile-wolf.sh",
     "scripts/resolve.py",
+    "scripts/discovery.py",
     "scripts/package-plan.sh",
     "scripts/resolve-packages.sh",
     "scripts/lock-packages.py",
