@@ -10,5 +10,5 @@
 ## 2. Verification and delivery
 
 - [x] 2.1 Run repository unit tests, documentation checks and strict OpenSpec validation after assembling the change.
-- [ ] 2.2 Build and test a candidate image through the existing CI pipeline, including SBOM and vulnerability gates.
-- [ ] 2.3 Review the assembled change and record publication separately from deployment and Moonlight/Intel acceptance.
+- [x] 2.2 Build and test a candidate image through the existing CI pipeline, including SBOM and vulnerability gates.
+- [x] 2.3 Review the assembled change and record publication separately from deployment and Moonlight/Intel acceptance.
