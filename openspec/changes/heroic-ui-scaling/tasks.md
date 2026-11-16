@@ -9,5 +9,5 @@
 ## 2. Verification and delivery
 
 - [ ] 2.1 Run repository tests, documentation checks and strict OpenSpec validation.
-- [ ] 2.2 Build and publish the changed Heroic image through the existing application workflow.
+- [x] 2.2 Build and publish the changed Heroic image through the existing application workflow.
 - [ ] 2.3 Verify the launcher scale on a real 4K television session, then update the main specification and archive this change.
