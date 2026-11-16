@@ -1,4 +1,4 @@
-"""Apply the reviewed control-authentication backport only to its exact source."""
+"""Apply reviewed security backports only to their exact stable source."""
 import hashlib
 from pathlib import Path
 import subprocess
@@ -11,6 +11,7 @@ EXPECTED = {
     "src/moonlight-protocol/crypto/src/crypto.cpp": "f8a8ef40579d0928812b91cf8927d95b4d3311b7404756a1f61f557915f4f4a3",
     "src/moonlight-protocol/crypto/src/sign.hpp": "eaf85ed615a345d3c55f6d811090a1bfc228048154b3641b9b56804e823017d1",
     "src/moonlight-protocol/crypto/src/utils.cpp": "2d1e837da2765fc1be810a404158caa857c91f4c974ac140ff257edd5b980018",
+    "src/moonlight-protocol/crypto/src/x509.cpp": "2222ac9f7c0e42911bd1747c2ec39417654e6158ce800f0f9d051c24e7854948",
     "src/moonlight-protocol/moonlight/control.hpp": "57334ee366dde72c35ac342d940a567bf9d24afa8ec478ccd3b3a8bec4e6e4e5",
     "src/moonlight-server/control/control.cpp": "b586375db9af463520a8456ad0a8711459618573bfc89e0a900aaca7b86aaa87",
     "src/moonlight-server/gst-plugin/audio.hpp": "9f401f95545258fece52b7da098736ee9cb6d9d267b4caaf1a7859f6005a6dd5",
@@ -25,17 +26,18 @@ EXPECTED = {
 }
 
 
-def apply(root, revision, patch, followup):
+def apply(root, revision, *patches):
     if revision != SOURCE:
         raise ValueError("Wolf revision needs security backport review")
     for name, expected in EXPECTED.items():
         if hashlib.sha256((root / name).read_bytes()).hexdigest() != expected:
             raise ValueError("Wolf security backport source mismatch: " + name)
-    subprocess.run(["git", "apply", "--check", str(patch)], cwd=root, check=True)
-    subprocess.run(["git", "apply", str(patch)], cwd=root, check=True)
-    subprocess.run(["git", "apply", "--check", str(followup)], cwd=root, check=True)
-    subprocess.run(["git", "apply", str(followup)], cwd=root, check=True)
+    for patch in patches:
+        subprocess.run(["git", "apply", "--check", str(patch)], cwd=root, check=True)
+        subprocess.run(["git", "apply", str(patch)], cwd=root, check=True)
 
 
 if __name__ == "__main__":
-    apply(Path(sys.argv[1]), sys.argv[2], Path(sys.argv[3]).resolve(), Path(sys.argv[4]).resolve())
+    if len(sys.argv) != 6:
+        raise SystemExit("usage: apply-wolf-security.py ROOT REVISION PATCH FOLLOWUP CERT_AND_BOUNDS")
+    apply(Path(sys.argv[1]), sys.argv[2], *(Path(arg).resolve() for arg in sys.argv[3:]))

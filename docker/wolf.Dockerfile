@@ -44,13 +44,17 @@ ARG WOLF_SHA
 COPY scripts/apply-wolf-security.py /apply-wolf-security.py
 COPY docker/patches/wolf-control-auth.patch /wolf-control-auth.patch
 COPY docker/patches/wolf-control-boundaries.patch /wolf-control-boundaries.patch
-RUN python3 /apply-wolf-security.py /sources/wolf "$WOLF_SHA" /wolf-control-auth.patch /wolf-control-boundaries.patch
+COPY docker/patches/wolf-cert-packet-bounds.patch /wolf-cert-packet-bounds.patch
+RUN python3 /apply-wolf-security.py /sources/wolf "$WOLF_SHA" /wolf-control-auth.patch /wolf-control-boundaries.patch /wolf-cert-packet-bounds.patch
 COPY docker/security-tests/ /wolf-security-tests/
 RUN g++ -std=gnu++20 -I/wolf-security-tests -I/sources/wolf/src/moonlight-protocol \
     -I/sources/wolf/src/moonlight-protocol/crypto \
     /wolf-security-tests/control-auth.cpp /sources/wolf/src/moonlight-protocol/crypto/src/crypto.cpp \
     /sources/wolf/src/moonlight-protocol/crypto/src/utils.cpp -lcrypto -o /tmp/control-auth-test \
     && /tmp/control-auth-test && rm /tmp/control-auth-test \
+    && g++ -std=gnu++20 -I/sources/wolf/src/moonlight-protocol/crypto \
+    /wolf-security-tests/cert-auth.cpp /sources/wolf/src/moonlight-protocol/crypto/src/x509.cpp \
+    -lcrypto -o /tmp/cert-auth-test && /tmp/cert-auth-test && rm /tmp/cert-auth-test \
     && g++ -std=gnu++20 -I/wolf-security-tests -I/sources/wolf/src/moonlight-protocol \
     -I/sources/wolf/src/moonlight-protocol/crypto /wolf-security-tests/pairing.cpp \
     /sources/wolf/src/moonlight-protocol/moonlight.cpp /sources/wolf/src/moonlight-protocol/crypto/src/crypto.cpp \

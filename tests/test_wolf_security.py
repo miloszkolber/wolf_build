@@ -35,8 +35,10 @@ class SecurityPatchTests(unittest.TestCase):
                 self.assertEqual(source.read_text(), "before\n")
                 followup = root / "followup.patch"
                 followup.write_text("--- a/source\n+++ b/source\n@@ -1 +1 @@\n-after\n+final\n")
-                security.apply(root, security.SOURCE, diff, followup)
-                self.assertEqual(source.read_text(), "final\n")
+                third = root / "third.patch"
+                third.write_text("--- a/source\n+++ b/source\n@@ -1 +1 @@\n-final\n+complete\n")
+                security.apply(root, security.SOURCE, diff, followup, third)
+                self.assertEqual(source.read_text(), "complete\n")
 
 
 if __name__ == "__main__":

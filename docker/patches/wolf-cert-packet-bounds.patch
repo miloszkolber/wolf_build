@@ -1,0 +1,88 @@
+# Adapted from Wolf PR 566 (dfbcda075e477881bf36d5cd4c55de545ddad5aa) and PR 570
+# (395b2ae12c9fd0cedea769f8c1b54ab6c18b617e), by Malcolm Habeeb.
+# PR 566's insecure opt-in is omitted. PR 570's tag fixes already exist in the local follow-up.
+diff --git a/src/moonlight-protocol/crypto/src/x509.cpp b/src/moonlight-protocol/crypto/src/x509.cpp
+index d5a6bd0..ca43823 100644
+--- a/src/moonlight-protocol/crypto/src/x509.cpp
++++ b/src/moonlight-protocol/crypto/src/x509.cpp
+@@ -205,11 +205,6 @@ static int openssl_verify_cb(int ok, X509_STORE_CTX *ctx) {
+   int err_code = X509_STORE_CTX_get_error(ctx);
+ 
+   switch (err_code) {
+-  // TODO: Checking for X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY is a temporary workaround to get
+-  // moonlight-embedded to work on the raspberry pi
+-  case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+-    return 1;
+-
+   // Expired or not-yet-valid certificates are fine. Sometimes Moonlight is running on embedded devices
+   // that don't have accurate clocks (or haven't yet synchronized by the time Moonlight first runs).
+   // This behavior also matches what GeForce Experience does.
+@@ -252,4 +247,4 @@ std::optional<std::string> verification_error(x509_ptr paired_cert, x509_ptr unt
+   return X509_verify_cert_error_string(err_code);
+ }
+ 
+-} // namespace x509
+\ No newline at end of file
++} // namespace x509
+diff --git a/src/moonlight-protocol/moonlight/control.hpp b/src/moonlight-protocol/moonlight/control.hpp
+index 93db829..66294d6 100644
+--- a/src/moonlight-protocol/moonlight/control.hpp
++++ b/src/moonlight-protocol/moonlight/control.hpp
+@@ -387,6 +387,13 @@ struct ControlEncryptedPacket {
+   [[nodiscard]] size_t full_size() const {
+     return boost::endian::little_to_native(this->header.length) + sizeof(ControlPacket);
+   }
++
++  // Validate the received buffer before encrypted_msg() or decrypt_packet().
++  [[nodiscard]] bool fits_in(size_t received_size) const {
++    constexpr size_t min_length = sizeof(seq) + GCM_TAG_SIZE + sizeof(ControlPacket);
++    return received_size >= sizeof(ControlPacket) + min_length &&
++           boost::endian::little_to_native(this->header.length) >= min_length && full_size() <= received_size;
++  }
+ };
+ 
+ /**
+@@ -466,4 +473,4 @@ static constexpr const char *packet_type_to_str(pkts::PACKET_TYPE p) noexcept {
+   return "Unrecognised";
+ }
+ 
+-} // namespace moonlight::control
+\ No newline at end of file
++} // namespace moonlight::control
+diff --git a/src/moonlight-server/control/control.cpp b/src/moonlight-server/control/control.cpp
+index 07c2129..c625cb4 100644
+--- a/src/moonlight-server/control/control.cpp
++++ b/src/moonlight-server/control/control.cpp
+@@ -181,6 +181,11 @@ void run_control(int port,
+         case ENET_EVENT_TYPE_RECEIVE:
+           enet_packet packet = {event.packet, enet_packet_destroy};
+ 
++          if (packet->dataLength < sizeof(ControlPacket)) {
++            logs::log(logs::warning, "[ENET] Dropping {} byte packet, too short for a header", packet->dataLength);
++            break;
++          }
++
+           auto type = ((ControlPacket *)packet->data)->type;
+ 
+           logs::log(logs::trace,
+@@ -194,6 +199,13 @@ void run_control(int port,
+           if (type == ENCRYPTED) {
+             try {
+               auto enc_pkt = (ControlEncryptedPacket *)(packet->data);
++              if (!enc_pkt->fits_in(packet->dataLength)) {
++                logs::log(logs::warning,
++                          "[ENET] Dropping {} byte encrypted packet, its header claims {} bytes",
++                          packet->dataLength,
++                          enc_pkt->full_size());
++                break;
++              }
+               auto decrypted = decrypt_packet(*enc_pkt, client_session->aes_key);
+               auto sub_type = ((ControlPacket *)decrypted.data())->type;
+ 
+@@ -233,4 +245,4 @@ void run_control(int port,
+   stop_ev.unregister();
+ }
+ 
+-} // namespace control
+\ No newline at end of file
++} // namespace control

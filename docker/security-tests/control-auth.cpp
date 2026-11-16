@@ -19,6 +19,20 @@ int main() {
   const std::string other = "10112233445566778899AABBCCDDEEFF";
   const std::string payload("\x02\x03\x00\x00", 4);
   auto packet = encrypt_packet(key, 0, payload);
+  auto size = packet->full_size();
+  if (!packet->fits_in(size) || packet->fits_in(size - 1) ||
+      packet->fits_in(sizeof(ControlPacket)))
+    throw std::runtime_error("control packet received bounds not enforced");
+  auto old_length = packet->header.length;
+  for (unsigned length = 0; length < sizeof(packet->seq) + GCM_TAG_SIZE + sizeof(ControlPacket); ++length) {
+    packet->header.length = boost::endian::native_to_little<std::uint16_t>(length);
+    if (packet->fits_in(size))
+      throw std::runtime_error("short encrypted payload accepted");
+  }
+  packet->header.length = boost::endian::native_to_little<std::uint16_t>(65535);
+  if (packet->fits_in(size))
+    throw std::runtime_error("oversized claimed packet accepted");
+  packet->header.length = old_length;
   if (decrypt_packet(*packet, key) != payload)
     throw std::runtime_error("valid control packet failed");
   packet->gcm_tag[0] ^= 1;
@@ -37,7 +51,10 @@ int main() {
     bool has_nul = std::memchr(candidate->gcm_tag, 0, GCM_TAG_SIZE) != nullptr;
     with_nul |= has_nul;
     without_nul |= !has_nul;
-    if (decrypt_packet(*candidate, key) != payload)
+    auto received = std::make_unique<char[]>(candidate->full_size());
+    std::memcpy(received.get(), candidate.get(), candidate->full_size());
+    auto &received_packet = *reinterpret_cast<ControlEncryptedPacket *>(received.get());
+    if (!received_packet.fits_in(candidate->full_size()) || decrypt_packet(received_packet, key) != payload)
       throw std::runtime_error("binary GCM tag failed");
   }
   if (!with_nul || !without_nul)

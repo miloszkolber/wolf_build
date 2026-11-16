@@ -12,3 +12,10 @@
 - [x] 2.1 Run repository unit tests, documentation checks and strict OpenSpec validation after assembling the change.
 - [x] 2.2 Build and test a candidate image through the existing CI pipeline, including SBOM and vulnerability gates.
 - [x] 2.3 Review the assembled change and record publication separately from deployment and Moonlight/Intel acceptance.
+
+## 3. Certificate and packet-length follow-up
+
+- [x] 3.1 Adapt PR 566 and PR 570 against the reviewed stable source without the insecure certificate override or changing other trust rules.
+- [x] 3.2 Add the changed patch, source hash and regression harness to runtime identity and build checks.
+- [x] 3.3 Run focused sandbox regressions, repository unit tests, documentation checks and strict schema validation.
+- [ ] 3.4 Review and run the checked-image pipeline. Record publication, deployment and real-client acceptance separately.

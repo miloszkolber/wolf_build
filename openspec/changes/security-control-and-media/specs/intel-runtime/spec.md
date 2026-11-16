@@ -35,3 +35,27 @@ The runtime SHALL reject failed pairing, control encryption and audio encryption
 #### Scenario: Audio encryption failure
 - **WHEN** audio encryption fails or its IV cannot be parsed
 - **THEN** the audio packet is dropped without consuming its sequence number
+
+### Requirement: Paired-client certificate verification
+
+The runtime SHALL reject client certificates with an unknown issuer during paired-client authorization. It SHALL retain verification anchored at a paired certificate, including the existing partial-chain and certificate validity-time behavior, without an override that permits unknown issuers.
+
+#### Scenario: Paired certificate
+- **WHEN** a client presents its paired certificate
+- **THEN** its certificate passes verification against that paired record
+
+#### Scenario: Unknown issuer
+- **WHEN** an unpaired client presents a certificate naming an unknown issuer
+- **THEN** it does not match a paired record, regardless of the insecure upstream compatibility environment variable
+
+### Requirement: Received control packet bounds
+
+The runtime SHALL validate a received control header before reading its type and SHALL reject encrypted packets whose declared bytes do not fit the received buffer or cannot contain an inner control header.
+
+#### Scenario: Truncated or undersized encrypted packet
+- **WHEN** a packet is shorter than its declared length or its encrypted payload is shorter than a control header
+- **THEN** it is dropped before decryption and control dispatch
+
+#### Scenario: Valid encrypted packet
+- **WHEN** an encrypted control packet contains a complete header and payload and authenticates successfully
+- **THEN** it retains existing control behavior
