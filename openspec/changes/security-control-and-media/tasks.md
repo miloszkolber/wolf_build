@@ -18,4 +18,4 @@
 - [x] 3.1 Adapt PR 566 and PR 570 against the reviewed stable source without the insecure certificate override or changing other trust rules.
 - [x] 3.2 Add the changed patch, source hash and regression harness to runtime identity and build checks.
 - [x] 3.3 Run focused sandbox regressions, repository unit tests, documentation checks and strict schema validation.
-- [ ] 3.4 Review and run the checked-image pipeline. Record publication, deployment and real-client acceptance separately.
+- [x] 3.4 Review and run the checked-image pipeline. Record publication, deployment and real-client acceptance separately.
