@@ -109,7 +109,13 @@ class ApplicationInputsTests(unittest.TestCase):
                 "PATH": f"{directory}:{os.environ['PATH']}",
                 "RUN_GAMESCOPE": "1",
             }
-            base = ["--console", "--fullscreen", "--no-sandbox"]
+            base = [
+                "--console",
+                "--fullscreen",
+                "--no-sandbox",
+                "--ozone-platform=x11",
+                "--enable-features=UseOzonePlatform,WaylandWindowDecorations",
+            ]
             for height, expected in (
                 ("2160", base + ["--force-device-scale-factor=2"]),
                 ("1440", base + ["--force-device-scale-factor=1.5"]),

@@ -20,7 +20,12 @@ heroic)
     # isolation boundary for this application.
     height=${GAMESCOPE_HEIGHT:-1080}
     [[ $height =~ ^[0-9]+$ ]] || exit 1
-    heroic_args=(--console --fullscreen --no-sandbox)
+    heroic_args=(
+        --console --fullscreen --no-sandbox
+        # Heroic's gamescope guide: use X11 through Xwayland with Ozone enabled.
+        --ozone-platform=x11
+        --enable-features=UseOzonePlatform,WaylandWindowDecorations
+    )
     # Scale the launcher UI for the TV; games keep the session render size.
     if (( 10#$height >= 2160 )); then
         heroic_args+=(--force-device-scale-factor=2)
