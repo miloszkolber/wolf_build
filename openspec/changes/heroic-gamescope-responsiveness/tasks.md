@@ -8,6 +8,6 @@
 
 ## 2. Verification and delivery
 
-- [ ] 2.1 Run repository tests, documentation checks and strict OpenSpec validation.
-- [ ] 2.2 Build and publish the changed Heroic image through the existing application workflow.
+- [x] 2.1 Run repository tests, documentation checks and strict OpenSpec validation.
+- [x] 2.2 Build and publish the changed Heroic image through the existing application workflow.
 - [ ] 2.3 Verify interface responsiveness and gamepad navigation on a real television session, then archive this change.
