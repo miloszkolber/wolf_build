@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 import io
+import os
+import subprocess
 import sys
 import hashlib
 import shutil
@@ -92,6 +94,37 @@ class ApplicationInputsTests(unittest.TestCase):
             (root / "docker/packages/heroic.txt").write_text("changed Heroic packages")
             self.assertEqual(steam, apps.recipe_hash(root, "steam"))
             self.assertNotEqual(heroic, apps.recipe_hash(root, "heroic"))
+
+    def test_heroic_ui_scale_follows_stream_height(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            shim = Path(directory) / "heroic"
+            shim.write_text("#!/bin/sh\nprintf '%s\\n' \"$@\"\n")
+            shim.chmod(0o755)
+            env = {
+                **os.environ,
+                "APP_KIND": "heroic",
+                "GAMESCOPE_HEIGHT": "1080",
+                "HOME": directory,
+                "PATH": f"{directory}:{os.environ['PATH']}",
+                "RUN_GAMESCOPE": "1",
+            }
+            base = ["--console", "--fullscreen", "--no-sandbox"]
+            for height, expected in (
+                ("2160", base + ["--force-device-scale-factor=2"]),
+                ("1440", base + ["--force-device-scale-factor=1.5"]),
+                ("1200", base),
+                ("1080", base),
+            ):
+                env["GAMESCOPE_HEIGHT"] = height
+                result = subprocess.run(
+                    ["bash", str(root / "docker/apps/run.sh")],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(result.stdout.splitlines(), expected)
 
     def test_wolf_only_resolver_edits_do_not_change_application_recipe(self):
         source = Path(__file__).resolve().parents[1]

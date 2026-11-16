@@ -18,7 +18,16 @@ heroic)
     # Hosts that restrict unprivileged user namespaces (Ubuntu's AppArmor
     # default) deny Electron's zygote namespace; the container remains the
     # isolation boundary for this application.
-    heroic --console --fullscreen --no-sandbox
+    height=${GAMESCOPE_HEIGHT:-1080}
+    [[ $height =~ ^[0-9]+$ ]] || exit 1
+    heroic_args=(--console --fullscreen --no-sandbox)
+    # Scale the launcher UI for the TV; games keep the session render size.
+    if (( 10#$height >= 2160 )); then
+        heroic_args+=(--force-device-scale-factor=2)
+    elif (( 10#$height >= 1440 )); then
+        heroic_args+=(--force-device-scale-factor=1.5)
+    fi
+    heroic "${heroic_args[@]}"
     ;;
 *) echo 'Unsupported application' >&2; exit 1 ;;
 esac
