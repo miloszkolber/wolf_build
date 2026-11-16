@@ -9,7 +9,7 @@ Run Python/Bun commands in the development container. Run Docker commands agains
 ```sh
 python3 -m unittest discover -s tests
 bun scripts/check-docs.mjs
-OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
+OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@2.0.0 validate --all --strict
 python3 scripts/resolve.py --lock
 bash scripts/resolve-packages.sh runtime
 python3 scripts/lock-packages.py runtime

@@ -20,6 +20,6 @@ jobs:
         with:
           bun-version: 1.4.3
       - run: bun scripts/check-docs.mjs
-      - run: bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
+      - run: bun x --bun @fission-ai/openspec@2.0.0 validate --all --strict
         env:
           OPENSPEC_TELEMETRY: '0'

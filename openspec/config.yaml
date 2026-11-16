@@ -1,9 +1,9 @@
 schema: spec-driven
 
 context: |
-  wolf_build implementation is in progress. The initial change proposes an Intel-only
-  linux/amd64 Wolf runtime image maintained from upstream, with a shared gate image
-  owned and published by llama_build. No implementation contracts exist yet.
+  wolf_build maintains an Intel-only linux/amd64 Wolf runtime image and application
+  images, with a shared gate image owned and published by llama_build.
+  Implemented contracts live in specs; proposed work stays in active changes.
   Preserve compositor, embedded audio, input and application-container integration.
   Container publication is separate from deployment and Intel GPU acceptance.
 

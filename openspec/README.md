@@ -20,7 +20,7 @@ Run from the repository root in the development container. OpenSpec is developme
 ```sh
 python3 -m unittest discover -s tests
 bun scripts/check-docs.mjs
-OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@1.14.1 validate --all --strict
+OPENSPEC_TELEMETRY=0 bun x --bun @fission-ai/openspec@2.0.0 validate --all --strict
 ```
 
 Structural validation establishes that a proposal is well formed, not that an image works. Active changes record final-image checks, Intel probes and outstanding Moonlight acceptance separately.
