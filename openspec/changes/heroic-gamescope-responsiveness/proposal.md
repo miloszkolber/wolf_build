@@ -2,7 +2,7 @@
 
 ## Why
 
-Heroic's interface becomes slow and input feels unreliable under Gamescope when Electron starts without the compositor compatibility flags documented by Heroic. The live Wolf session showed the expected Electron Xwayland process but not the `UseOzonePlatform`/Wayland-decoration feature flags.
+Heroic's interface is severely sluggish and gamepad navigation is unreliable at launch while games play smoothly. The initial candidate added compatibility flags from Heroic's Gamescope guide, but the operator reports the same failure with the published candidate running. Missing flags are not an established cause. Rendering, frame scheduling and Gamepad API behavior still need direct diagnosis.
 
 ## What changes
 

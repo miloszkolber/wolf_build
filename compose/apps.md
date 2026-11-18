@@ -14,7 +14,7 @@ Gamescope is the default for both applications (`RUN_GAMESCOPE=1` in the image).
 
 Heroic scales its own interface from the session height: 200% at 2160 and above, 150% at 1440 and above, otherwise 100%. This is an Electron device scale factor and does not change the game render resolution, the streamed frame size or Heroic's persistent settings. The scale applies under Gamescope and the Sway fallback.
 
-Heroic starts under Gamescope with `--ozone-platform=x11` and `--enable-features=UseOzonePlatform,WaylandWindowDecorations`, as recommended by Heroic's gamescope guide. This avoids the slow Electron/Xwayland interaction that otherwise makes the launcher intermittently unresponsive.
+Heroic starts with `--ozone-platform=x11` and `--enable-features=UseOzonePlatform,WaylandWindowDecorations`, following Heroic's gamescope guide. These flags have not resolved the reported launcher stalls or unreliable startup gamepad navigation. Diagnosis and session acceptance remain open in `openspec/changes/heroic-gamescope-responsiveness/`.
 
 Steam installs Ubuntu's `steam-installer` with no recommended packages. Valve's client, Proton and games update in the persistent user home, not in a fabricated immutable Steam-client version. Their runtime updates are outside the distribution package inventory. A container-private system bus and NetworkManager provide Big Picture's network-status API. The status daemon observes Docker's externally configured interface without NET_ADMIN/NET_RAW, leaves addresses/DNS unchanged and uses a real connectivity probe. No host system bus, host NetworkManager, Bluetooth daemon or desktop service is exposed.
 
