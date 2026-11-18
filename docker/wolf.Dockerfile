@@ -46,6 +46,15 @@ COPY docker/patches/wolf-control-auth.patch /wolf-control-auth.patch
 COPY docker/patches/wolf-control-boundaries.patch /wolf-control-boundaries.patch
 COPY docker/patches/wolf-cert-packet-bounds.patch /wolf-cert-packet-bounds.patch
 RUN python3 /apply-wolf-security.py /sources/wolf "$WOLF_SHA" /wolf-control-auth.patch /wolf-control-boundaries.patch /wolf-cert-packet-bounds.patch
+COPY docker/runtime/joydev-udev.hpp /sources/wolf/src/moonlight-server/runners/joydev-udev.hpp
+COPY docker/patches/wolf-joydev-udev.patch /wolf-joydev-udev.patch
+COPY docker/runtime-tests/joydev-udev.cpp /wolf-runtime-tests/joydev-udev.cpp
+RUN echo '2144d0683d67f798ce63ff36730943c4613b0877dc8f3637f689a1e994c9fd91  /sources/wolf/src/moonlight-server/runners/docker.cpp' | sha256sum -c - \
+    && git -C /sources/wolf apply --check /wolf-joydev-udev.patch \
+    && git -C /sources/wolf apply /wolf-joydev-udev.patch \
+    && g++ -std=gnu++20 -I/sources/wolf/src/moonlight-server \
+    /wolf-runtime-tests/joydev-udev.cpp -o /tmp/joydev-udev-test \
+    && /tmp/joydev-udev-test && rm /tmp/joydev-udev-test
 COPY docker/security-tests/ /wolf-security-tests/
 RUN g++ -std=gnu++20 -I/wolf-security-tests -I/sources/wolf/src/moonlight-protocol \
     -I/sources/wolf/src/moonlight-protocol/crypto \

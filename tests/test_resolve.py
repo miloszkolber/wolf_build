@@ -179,6 +179,9 @@ class ResolverTests(unittest.TestCase):
         self.assertIn("scripts/discovery.py", owned)
         self.assertIn("docker/patches/wolf-control-auth.patch", owned)
         self.assertIn("docker/patches/wolf-cert-packet-bounds.patch", owned)
+        self.assertIn("docker/patches/wolf-joydev-udev.patch", owned)
+        self.assertIn("docker/runtime/joydev-udev.hpp", owned)
+        self.assertIn("docker/runtime-tests/joydev-udev.cpp", owned)
         self.assertIn("scripts/apply-wolf-security.py", owned)
         self.assertIn("docker/security-tests/control-auth.cpp", owned)
         self.assertIn("docker/security-tests/cert-auth.cpp", owned)
@@ -201,7 +204,9 @@ class ResolverTests(unittest.TestCase):
             (root / "docker/apps.Dockerfile").write_text("application")
             git("add", "."); git("commit", "-qm", "unrelated")
             self.assertEqual(before, resolve.packaging_identity(root))
-            for name in ("docker/patches/wolf-cert-packet-bounds.patch", "docker/security-tests/cert-auth.cpp"):
+            for name in ("docker/patches/wolf-cert-packet-bounds.patch", "docker/security-tests/cert-auth.cpp",
+                         "docker/patches/wolf-joydev-udev.patch", "docker/runtime/joydev-udev.hpp",
+                         "docker/runtime-tests/joydev-udev.cpp"):
                 path = root / name
                 path.write_text("modified security input")
                 self.assertNotEqual(before["sha256"], resolve.packaging_identity(root)["sha256"])

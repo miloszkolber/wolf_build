@@ -19,3 +19,12 @@
 - [x] 3.3 Measure isolated Electron and fresh-profile Heroic frame timing without production state or input devices. This fixture does not reproduce the reported stalls.
 - [ ] 3.4 Capture renderer frame timing, event-loop delay, focus and Gamepad API state during the affected real-session interaction in an authorized diagnostic window.
 - [ ] 3.5 Repair the evidenced failure, add a meaningful regression and repeat real launcher and game acceptance.
+
+## 4. Evidenced startup-controller repair
+
+- [x] 4.1 Reproduce cold enumeration failure and verify the missing joydev udev record with a same-device Chromium A/B test.
+- [x] 4.2 Complete joydev metadata in the runtime device-handoff owner, including matching unplug cleanup, source guards and build identity.
+- [x] 4.3 Run the compiled metadata regression, repository checks and source-patch application check.
+- [ ] 4.4 Build and publish through the existing runtime workflow, then verify the checked image.
+- [ ] 4.5 Roll out in the authorized quiet window and repeat cold enumeration using the fixed runtime rather than temporary metadata.
+- [ ] 4.6 Resolve or capture the remaining real-client UI stalls. Preserve separate scaling, game and TV acceptance.
